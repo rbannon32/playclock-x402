@@ -1,0 +1,98 @@
+name: CI
+
+# Lint, test and run the golden-query evals on every push and pull request.
+# The whole suite is hermetic — MemoryStore, no network, no GCP credentials, no
+# LLM — so this needs no secrets and can run on forks.
+#
+# TODO(post-launch): add a deploy job gated on `main` + the eval step, running the
+# gcloud commands in infra/deploy.md via Workload Identity Federation. Deliberately
+# manual until MainNet is live: the facilitator permanently catalogs the resource
+# URL of the first settled payment, so an accidental deploy is not fully reversible.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+# A new push to the same branch supersedes the run in flight.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          # Pinned to match the version in the Dockerfiles.
+          version: "0.8.17"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install Python
+        # .python-version pins 3.12; polars/nflreadpy/ADK wheel coverage is the
+        # constraint on going newer (DESIGN_NOTES §8).
+        run: uv python install
+
+      - name: Sync dependencies
+        # --locked fails if uv.lock is out of date with pyproject.toml, so a
+        # dependency change cannot land untested. --all-extras brings the ingest
+        # group, which the ingest tests import.
+        run: uv sync --locked --all-extras
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Format check
+        run: uv run ruff format --check .
+
+      - name: Tests
+        run: uv run pytest -q
+
+      - name: Golden evals (deterministic engine)
+        # The offline quality gate: 23 golden queries asserting correct player
+        # resolution, valid response contracts, and that every cited number
+        # traces back to the seeded store. The `adk` engine variant needs Vertex
+        # credentials and is run by hand before a weekly deploy (tech spec §5).
+        run: uv run python -m api.evals.run_evals --engine deterministic
+
+      - name: Example agent selftest
+        # The paying example end to end against an in-process app: discover,
+        # 402, sign, pay, receipt, plus a real Algorand group built offline.
+        # It rotted silently while it ran only by hand.
+        run: uv run python examples/agent/selftest.py
+
+      - name: Install Node
+        # Only the wallet layer needs it. Everything else under web/ is plain
+        # ES modules served as-is.
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        # `npm ci` fails on a lockfile that disagrees with package.json — the
+        # same contract `uv sync --locked` enforces on the Python side.
+        run: npm ci --no-audit --no-fund
+        working-directory: web
+
+      - name: Wallet-layer tests
+        # What we sign and what we send, checked without a wallet or a chain.
+        # A bug here moves the wrong amount to the wrong address.
+        run: npm test
+        working-directory: web
+
+      - name: Build the wallet bundle
+        # Proves the bundle still builds; the artefact itself is rebuilt in the
+        # image, never committed.
+        run: npm run build
+        working-directory: web

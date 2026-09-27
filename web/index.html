@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Play Clock — pay-per-answer fantasy football intelligence</title>
+    <meta
+      name="description"
+      content="One fantasy football answer at a time. Start/sit calls, waiver boards and roster audits grounded in real usage data, paid for in USDC micropayments on Algorand. No subscription, no account."
+    />
+    <meta name="color-scheme" content="dark" />
+    <link rel="canonical" href="https://playclock.xyz/" />
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234ade80'/%3E%3Ctext x='16' y='22' font-family='system-ui,sans-serif' font-size='16' font-weight='800' text-anchor='middle' fill='%23052e16'%3EGO%3C/text%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="mode-banner" data-chrome="mode-banner" hidden></div>
+    <div data-chrome="nav"></div>
+
+    <main id="main">
+      <header class="hero hero-split">
+        <div class="wrap hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">Pay per answer · USDC on Algorand · No account</p>
+            <h1>Stop guessing on Sunday morning.</h1>
+            <p class="lede">
+              One question, one verdict, one payment. Start/sit calls, waiver boards and
+              roster audits grounded in real usage data, with every number sourced.
+            </p>
+            <div class="trust-line" role="group" aria-label="Product promises">
+              <span>10 analyses</span
+              ><span id="trust-price-range">Priced per answer</span
+              ><span>No subscription</span>
+            </div>
+          </div>
+
+          <section class="ask-panel" aria-labelledby="quick-ask-label">
+            <p class="eyebrow" id="quick-ask-label">Ask one question</p>
+            <form id="quick-ask-form" class="quick-ask-form">
+              <label class="visually-hidden" for="quick-ask">What do you need to know?</label>
+              <textarea
+                id="quick-ask"
+                rows="3"
+                enterkeyhint="go"
+                placeholder="Start Bijan Robinson or De'Von Achane this week?"
+              ></textarea>
+              <div class="ask-route">
+                <span id="quick-ask-route">→ We’ll route it to the right analysis</span>
+                <button class="btn btn-primary" type="submit">Choose analysis →</button>
+              </div>
+            </form>
+            <div class="prompt-chips" role="group" aria-label="Example questions">
+              <button type="button" data-question="Start Bijan Robinson or De'Von Achane?">Start / sit</button>
+              <button type="button" data-question="Who should I add from waivers this week?">Waiver board</button>
+              <button type="button" data-question="Audit my Sleeper roster">Roster audit</button>
+            </div>
+          </section>
+        </div>
+      </header>
+
+      <section class="section" aria-labelledby="trending-heading">
+        <div class="wrap">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Free signal</p>
+              <h2 id="trending-heading">Trending now</h2>
+              <p>What 13M+ Sleeper managers are adding and dropping in the last 24 hours.</p>
+            </div>
+            <a class="terminal-link" id="trending-cta" href="analyze.html?endpoint=trending">Unlock full board →</a>
+          </div>
+
+          <div id="trending-preview" class="grid" aria-busy="true">
+            <div class="skeleton-row"></div>
+            <div class="skeleton-row"></div>
+            <div class="skeleton-row"></div>
+          </div>
+          <p class="status" id="trending-status" role="status" hidden></p>
+          <p class="field-hint" id="trending-upsell"></p>
+        </div>
+      </section>
+
+      <section class="section value-section" aria-labelledby="how-heading">
+        <div class="wrap">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">The trust envelope</p>
+              <h2 id="how-heading">A call you can inspect.</h2>
+              <p>Every paid answer carries the same trust envelope.</p>
+            </div>
+          </div>
+          <div class="grid grid-3">
+            <article class="card">
+              <h3>A verdict, not a hedge</h3>
+              <p>
+                One headline call with an explicit confidence tier — high, medium or low —
+                so you know how hard to lean on it.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Every number, sourced</h3>
+              <p>
+                Each claim cites the stat, the value and the dataset slice it came from.
+                Nothing is recalled from memory; if it isn't in the data, it isn't claimed.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Fresh, and dated</h3>
+              <p>
+                Injury news and beat-writer reports are researched at request time, with
+                per-dataset freshness timestamps printed at the bottom of every answer.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section pricing-section" aria-labelledby="pricing-heading">
+        <div class="wrap">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">One answer at a time</p>
+              <h2 id="pricing-heading">Price list</h2>
+              <p id="network-note" hidden></p>
+            </div>
+            <a class="terminal-link" href="analyze.html">Pick an analysis →</a>
+          </div>
+          <p class="status" id="pricing-note" data-kind="error" hidden></p>
+          <div id="pricing">
+            <div class="skeleton-row" style="height: 220px"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section agents-section" aria-labelledby="agents-heading">
+        <div class="wrap">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">For agents</p>
+              <h2 id="agents-heading">Same board, no human in the loop.</h2>
+              <p>
+                Every endpoint is x402-gated and self-describing, so an AI agent can discover
+                it, pay it and parse it without a human in the loop.
+              </p>
+            </div>
+            <a class="terminal-link" href="docs.html">Agent quickstart →</a>
+          </div>
+          <div class="grid grid-2">
+            <article class="card card-muted">
+              <h3>Discoverable</h3>
+              <p>
+                A machine-readable catalog at <code>/v1/catalog</code>, an OpenAPI spec at
+                <code>/docs</code>, an <code>llms.txt</code>, and a Bazaar discovery block in
+                every 402 — request example, input schema and response example included.
+              </p>
+            </article>
+            <article class="card card-muted">
+              <h3>Payable</h3>
+              <p>
+                Standard x402 V2: call it, get a 402 with payment requirements, retry with a
+                <code>PAYMENT-SIGNATURE</code> header, read the settlement receipt out of
+                <code>PAYMENT-RESPONSE</code>. USDC on Algorand.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div data-chrome="footer"></div>
+    <script type="module" src="js/page-home.js"></script>
+  </body>
+</html>

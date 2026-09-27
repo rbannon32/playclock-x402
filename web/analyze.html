@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Analyze — Play Clock</title>
+    <meta
+      name="description"
+      content="Pick an analysis, pay for it, read the verdict. Trending boards, weekly sleepers, player deep dives, start/sit calls, waiver boards and league briefings."
+    />
+    <meta name="color-scheme" content="dark" />
+    <link rel="canonical" href="https://playclock.xyz/analyze.html" />
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234ade80'/%3E%3Ctext x='16' y='22' font-family='system-ui,sans-serif' font-size='16' font-weight='800' text-anchor='middle' fill='%23052e16'%3EGO%3C/text%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="mode-banner" data-chrome="mode-banner" hidden></div>
+    <div data-chrome="nav"></div>
+
+    <main id="main">
+      <section class="section page-intro analyze-intro">
+        <div class="wrap">
+          <p class="eyebrow">Analysis workspace · Pay and reveal</p>
+          <h1>Get the call. See the evidence.</h1>
+          <p class="lede">
+            Pick what you need, fill in the details, and pay for exactly that answer. There is
+            no account to create; your receipts stay in this browser, and your answers are
+            never stored on our servers.
+          </p>
+          <p class="status" id="catalog-note" data-kind="error" hidden></p>
+          <p class="routed-question" id="routed-question" hidden></p>
+        </div>
+      </section>
+
+      <section class="section analyze-workspace" aria-labelledby="picker-heading">
+        <div class="wrap">
+          <div class="analyze-grid">
+            <aside class="analysis-rail">
+              <h2 id="picker-heading">Analyses</h2>
+              <div id="endpoint-picker" role="group" aria-labelledby="picker-heading">
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row" style="margin-top: 0.6rem"></div>
+                <div class="skeleton-row" style="margin-top: 0.6rem"></div>
+              </div>
+            </aside>
+
+            <div class="analysis-main">
+              <p class="eyebrow">Configure request</p>
+              <div class="panel">
+                <div id="endpoint-form"></div>
+                <p class="status" id="analyze-status" role="status" hidden></p>
+              </div>
+              <section class="analysis-result" aria-labelledby="result-heading">
+                <h2 id="result-heading">Your verdict</h2>
+                <div id="analyze-result"></div>
+              </section>
+            </div>
+
+            <aside class="receipt-rail" aria-labelledby="receipt-rail-heading">
+              <h2 id="receipt-rail-heading">This browser</h2>
+              <p>
+                Settlement receipts are saved in this browser only — never on our servers, and
+                never as an account.
+              </p>
+              <div id="receipt-history" class="receipt-history"></div>
+              <div class="rail-stat"><span>Protocol</span><strong>x402 V2</strong></div>
+              <div class="rail-stat"><span>Network</span><strong>Algorand</strong></div>
+              <div class="rail-stat"><span>Currency</span><strong>USDC</strong></div>
+            </aside>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div data-chrome="footer"></div>
+    <script type="module" src="js/page-analyze.js"></script>
+  </body>
+</html>

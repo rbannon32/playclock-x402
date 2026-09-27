@@ -1,0 +1,13 @@
+# Play Clock — https://playclock.xyz
+#
+# Everything here is public and worth indexing, so this file exists for the
+# sitemap pointer. The duplicate-content problem it does NOT solve is the same
+# four pages being served under a second hostname (Cloud Run answers on
+# *.run.app as well as the mapped domain, and www resolves alongside the apex);
+# robots.txt is per-host and cannot speak for those. The <link rel="canonical">
+# in each page is what settles it.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://playclock.xyz/sitemap.xml

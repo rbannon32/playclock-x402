@@ -1,0 +1,53 @@
+# Play Clock — ingest job (Cloud Run Job, tech spec §1/§7, ingest/__init__.py).
+#
+# Batch semantics, not a service: it runs, writes the Firestore read models, and
+# exits. Unlike the API image this one installs the `ingest` extra (nflreadpy +
+# polars), which is why they are kept out of the API image. The `mcp` extra is a
+# client and has no business in a batch job.
+#
+# The task is selected by args:
+#   docker run --rm playclock-ingest --task trending
+#   gcloud run jobs execute ingest --args=--task,stats
+#
+# Exit code 0 only when every requested task succeeded; a non-zero exit is the
+# ingest-failure alert signal (stale data silently degrades every paid answer).
+
+# --- build ---------------------------------------------------------------
+FROM python:3.12-slim AS builder
+
+COPY --from=ghcr.io/astral-sh/uv:0.8.17 /uv /uvx /bin/
+
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=never \
+    UV_PROJECT_ENVIRONMENT=/app/.venv
+
+WORKDIR /app
+
+COPY pyproject.toml uv.lock .python-version ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --extra ingest --no-dev --no-install-project
+
+# --- runtime -------------------------------------------------------------
+FROM python:3.12-slim AS runtime
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/app/.venv/bin:$PATH" \
+    PYTHONPATH=/app \
+    STORE_BACKEND=firestore
+
+WORKDIR /app
+
+COPY --from=builder /app/.venv /app/.venv
+# ingest reads api.core.store / api.data.stats_store for the store seam and the
+# document shapes, so both packages ship.
+COPY api ./api
+COPY ingest ./ingest
+
+RUN useradd --create-home --uid 1000 app && chown -R app:app /app
+USER app
+
+# Args after the entrypoint select the task (--task nightly|stats|trending|all).
+ENTRYPOINT ["python", "-m", "ingest.job"]
+CMD ["--task", "all"]

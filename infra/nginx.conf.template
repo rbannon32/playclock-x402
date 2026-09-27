@@ -1,0 +1,56 @@
+# Static hosting for the Play Clock web UI on Cloud Run.
+#
+# ${PORT} is substituted by the nginx:alpine entrypoint at container start.
+server {
+    listen       ${PORT};
+    server_name  _;
+    root         /usr/share/nginx/html;
+    index        index.html;
+
+    # The pages are hand-written HTML at known paths; anything else is a 404
+    # rather than a silent rewrite to index.html, so a broken link stays visible.
+    location / {
+        try_files $uri $uri.html $uri/ =404;
+    }
+
+    # The bundle is 1.5MB, so it is worth caching — but its URL is stable
+    # across deploys, so `immutable` would let a browser keep a year-old copy
+    # and never ask again. A payment fix would then sit unapplied behind fresh
+    # plain modules that expect the new bundle. Revalidation keeps the bytes
+    # cached and makes the check a 304 against nginx's ETag.
+    # `^~` keeps the regex location below from claiming the bundle's .js files.
+    location ^~ /dist/ {
+        add_header Cache-Control "public, max-age=0, must-revalidate";
+        # A location with any add_header directives does not inherit the
+        # server-level ones below. Keep this list in sync (tests enforce it).
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Content-Security-Policy "frame-ancestors 'none'" always;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    }
+    # The plain ES modules and CSS revalidate too. Left to heuristic freshness a
+    # browser can pair a cached old api.js with a fresh flow.js that imports an
+    # export it lacks, and the module graph fails to link: a dead pay page.
+    location ~* \.(html|json|txt|xml|js|mjs|css)$ {
+        add_header Cache-Control "no-cache";
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Content-Security-Policy "frame-ancestors 'none'" always;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    }
+
+    # This origin serves static files only: it never sees a payment, a wallet
+    # key or an API response. The headers below are the cheap half of not being
+    # the weak link anyway.
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Content-Security-Policy "frame-ancestors 'none'" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    gzip             on;
+    gzip_types       text/plain text/css application/javascript application/json image/svg+xml;
+    gzip_min_length  1024;
+}

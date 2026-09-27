@@ -1,0 +1,20 @@
+{
+  "name": "playclock-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Static UI for Play Clock. Only the wallet layer is bundled; everything else is plain ES modules served as-is.",
+  "scripts": {
+    "build": "esbuild js/wallet/entry.js --bundle --format=esm --target=es2022 --minify --sourcemap --outfile=dist/wallet.js",
+    "build:dev": "esbuild js/wallet/entry.js --bundle --format=esm --target=es2022 --outfile=dist/wallet.js",
+    "test": "node --test \"js/**/*.test.js\""
+  },
+  "dependencies": {
+    "@blockshake/defly-connect": "1.2.1",
+    "@perawallet/connect": "1.6.0",
+    "algosdk": "3.7.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.0"
+  }
+}

@@ -1,0 +1,36 @@
+# The static web UI. Two stages: bundle the wallet layer with node, then serve
+# plain files with nginx. Nothing node-shaped survives into the runtime image.
+#
+# Only `web/js/wallet/` is bundled (algosdk + the Pera and Defly SDKs). Every
+# other file under web/ is served exactly as it was written, which is what keeps
+# the UI debuggable in a browser with no source maps and no build indirection.
+
+FROM node:22-alpine AS build
+WORKDIR /build
+
+# Install against the lockfile first so the layer caches on dependency changes
+# rather than on every source edit.
+COPY web/package.json web/package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
+
+COPY web/ ./
+RUN npm run build && npm test
+
+
+FROM nginx:1.27-alpine AS runtime
+
+# nginx:alpine substitutes ${PORT} into anything in templates/ at startup, which
+# is how one image satisfies Cloud Run's "listen on $PORT" contract without an
+# entrypoint script.
+ENV PORT=8080
+COPY infra/nginx.conf.template /etc/nginx/templates/default.conf.template
+
+COPY --from=build /build/ /usr/share/nginx/html/
+# Build inputs are not runtime inputs.
+RUN rm -rf /usr/share/nginx/html/node_modules \
+           /usr/share/nginx/html/package.json \
+           /usr/share/nginx/html/package-lock.json \
+           /usr/share/nginx/html/README.md \
+ && find /usr/share/nginx/html -name '*.test.js' -delete
+
+EXPOSE 8080

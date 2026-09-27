@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>My roster — Play Clock</title>
+    <meta
+      name="description"
+      content="Enter your Sleeper username for a full roster audit: positional grades, this week's start/sit calls, drop candidates and the waiver adds actually available in your league."
+    />
+    <meta name="color-scheme" content="dark" />
+    <link rel="canonical" href="https://playclock.xyz/roster.html" />
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234ade80'/%3E%3Ctext x='16' y='22' font-family='system-ui,sans-serif' font-size='16' font-weight='800' text-anchor='middle' fill='%23052e16'%3EGO%3C/text%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="mode-banner" data-chrome="mode-banner" hidden></div>
+    <div data-chrome="nav"></div>
+
+    <main id="main">
+      <section class="section page-intro">
+        <div class="wrap">
+          <p class="eyebrow">Sleeper managers</p>
+          <h1>Audit my roster.</h1>
+          <p class="lede">
+            Type your Sleeper username. We pull your roster through Sleeper's public
+            read-only API, grade every position group, call your lineup for the week, flag
+            drop candidates, and name the waiver adds that are actually free in your league.
+          </p>
+        </div>
+      </section>
+
+      <section class="section workspace-section" aria-labelledby="form-heading">
+        <div class="wrap">
+          <div class="grid grid-2" style="align-items: start">
+            <div class="panel">
+              <p class="eyebrow">Configure request</p>
+              <h2 id="form-heading">Your team</h2>
+              <p class="status" id="roster-catalog-note" data-kind="error" hidden></p>
+
+              <form id="roster-form" novalidate>
+                <div class="field">
+                  <label for="sleeper-username">Sleeper username *</label>
+                  <input
+                    type="text"
+                    id="sleeper-username"
+                    name="sleeper_username"
+                    placeholder="your_sleeper_handle"
+                    autocomplete="username"
+                    autocapitalize="none"
+                    spellcheck="false"
+                    required
+                  />
+                  <p class="field-hint">
+                    Public read-only lookup. Your roster is never stored on our servers — your
+                    wallet is the only identity this service has.
+                  </p>
+                </div>
+
+                <div class="field">
+                  <label for="league-id">League ID</label>
+                  <input type="text" id="league-id" name="league_id" placeholder="optional" />
+                  <p class="field-hint">
+                    Leave blank to use your first NFL league of the season.
+                  </p>
+                </div>
+
+                <div class="field">
+                  <label for="roster-week">NFL week</label>
+                  <input
+                    type="number"
+                    id="roster-week"
+                    name="week"
+                    min="1"
+                    max="18"
+                    inputmode="numeric"
+                    placeholder="current week"
+                  />
+                  <p class="field-hint">Leave blank for the current week.</p>
+                </div>
+
+                <div id="roster-actions"></div>
+                <p class="status" id="roster-status" role="status" hidden></p>
+              </form>
+            </div>
+
+            <div>
+              <article class="card" id="roster-upsell" hidden></article>
+              <article class="card card-muted" style="margin-top: 0.9rem">
+                <h3>Not on Sleeper?</h3>
+                <p>
+                  The roster endpoint also accepts a manually pasted roster. That form isn't
+                  in this UI yet — for now, agents and scripts can post a
+                  <code>roster[]</code> array directly. See the
+                  <a href="docs.html">agent quickstart</a>.
+                </p>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="roster-result-heading">
+        <div class="wrap">
+          <p class="eyebrow">Paid result</p>
+          <h2 id="roster-result-heading">Your audit</h2>
+          <div id="roster-result"></div>
+        </div>
+      </section>
+    </main>
+
+    <div data-chrome="footer"></div>
+    <script type="module" src="js/page-roster.js"></script>
+  </body>
+</html>

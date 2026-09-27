@@ -1,0 +1,45 @@
+# Keep the build context small and the image free of anything that is not the app.
+# Note the Dockerfiles COPY explicit paths, so this is defence in depth — its main
+# job is stopping a 400MB .venv from being uploaded to Cloud Build on every push.
+
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+.git/
+.github/
+.gitignore
+
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage*
+tests/
+
+# Secrets and local config must never reach an image layer.
+.env
+.envrc
+*.pem
+*.key
+
+# Docs and infra are not runtime inputs — with two exceptions, because
+# Dockerfile.web builds the UI and needs its nginx config. Order matters here:
+# later patterns win, which is what keeps node_modules out even though web/ is in.
+*.md
+!README.md
+infra/
+!infra/nginx.conf.template
+Dockerfile*
+.dockerignore
+
+# web/ IS a build input for Dockerfile.web. Its installed dependencies and its
+# built bundle are not: both are produced inside the image.
+web/node_modules/
+web/dist/
+node_modules/

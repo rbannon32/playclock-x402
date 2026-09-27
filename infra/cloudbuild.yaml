@@ -1,0 +1,69 @@
+# Cloud Build config for all three Play Clock images.
+#
+# Why this file exists instead of a bare `gcloud builds submit --tag`: that
+# shorthand runs the legacy non-BuildKit builder, and both Dockerfiles use
+# `RUN --mount=type=cache` for the uv wheel cache. Without BuildKit the build
+# fails at the dependency layer with "the --mount option requires BuildKit".
+# Setting DOCKER_BUILDKIT=1 on an explicit docker step is what turns it on.
+#
+#   gcloud builds submit --config=infra/cloudbuild.yaml \
+#     --substitutions=_IMAGE_BASE=us-east4-docker.pkg.dev/playclock/playclock,_TAG=$(git rev-parse --short HEAD) .
+
+substitutions:
+  _IMAGE_BASE: us-east4-docker.pkg.dev/playclock/playclock
+  _TAG: latest
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    id: api
+    env: ["DOCKER_BUILDKIT=1"]
+    args:
+      - build
+      - -f
+      - Dockerfile
+      - -t
+      - ${_IMAGE_BASE}/api:${_TAG}
+      - -t
+      - ${_IMAGE_BASE}/api:latest
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    id: ingest
+    env: ["DOCKER_BUILDKIT=1"]
+    args:
+      - build
+      - -f
+      - Dockerfile.ingest
+      - -t
+      - ${_IMAGE_BASE}/ingest:${_TAG}
+      - -t
+      - ${_IMAGE_BASE}/ingest:latest
+      - .
+
+  # The UI. Its own build stage runs `npm ci && npm run build && npm test`, so a
+  # wallet-layer test failure fails the image rather than shipping a bundle that
+  # signs the wrong thing.
+  - name: gcr.io/cloud-builders/docker
+    id: web
+    env: ["DOCKER_BUILDKIT=1"]
+    args:
+      - build
+      - -f
+      - Dockerfile.web
+      - -t
+      - ${_IMAGE_BASE}/web:${_TAG}
+      - -t
+      - ${_IMAGE_BASE}/web:latest
+      - .
+
+images:
+  - ${_IMAGE_BASE}/api:${_TAG}
+  - ${_IMAGE_BASE}/api:latest
+  - ${_IMAGE_BASE}/ingest:${_TAG}
+  - ${_IMAGE_BASE}/ingest:latest
+  - ${_IMAGE_BASE}/web:${_TAG}
+  - ${_IMAGE_BASE}/web:latest
+
+options:
+  machineType: E2_HIGHCPU_8
+  logging: CLOUD_LOGGING_ONLY

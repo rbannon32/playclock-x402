@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>For agents — Play Clock</title>
+    <meta
+      name="description"
+      content="x402 quickstart for AI agents and bot builders: the 402 handshake, V2 headers, curl examples, OpenAPI and llms.txt pointers, and Bazaar discovery."
+    />
+    <meta name="color-scheme" content="dark" />
+    <link rel="canonical" href="https://playclock.xyz/docs.html" />
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234ade80'/%3E%3Ctext x='16' y='22' font-family='system-ui,sans-serif' font-size='16' font-weight='800' text-anchor='middle' fill='%23052e16'%3EGO%3C/text%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="mode-banner" data-chrome="mode-banner" hidden></div>
+    <div data-chrome="nav"></div>
+
+    <main id="main">
+      <section class="section page-intro docs-intro">
+        <div class="wrap">
+          <p class="eyebrow">For agents and bot builders</p>
+          <h1>Pay a dime, get a fantasy verdict.</h1>
+          <p class="lede">
+            Every paid endpoint speaks x402 V2 over plain HTTP. No API key, no signup, no
+            rate-limit negotiation: call it, get a 402 with machine-readable payment
+            requirements, pay, call again. Responses are typed JSON with the verdict block at
+            the root.
+          </p>
+          <p id="docs-health" class="inline-row" style="margin-top: 1rem"></p>
+          <p class="status" id="docs-catalog-note" data-kind="error" hidden></p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="flow-heading">
+        <div class="wrap">
+          <div class="section-head">
+            <div><h2 id="flow-heading">The 402 handshake</h2></div>
+          </div>
+
+          <ol class="steps">
+            <li>
+              <strong>Call the endpoint normally.</strong> No payment header on the first
+              request. You get <code>402 Payment Required</code>.
+            </li>
+            <li>
+              <strong>Read the payment requirements.</strong> The V2
+              <code>PaymentRequired</code> object is at the <em>root</em> of the 402 JSON body
+              (camelCase), and is also base64-encoded in the <code>PAYMENT-REQUIRED</code>
+              response header. It carries <code>accepts[]</code> — scheme, CAIP-2
+              <code>network</code>, USDC <code>asset</code> id, <code>amount</code> in atomic
+              units as a string, and <code>payTo</code>.
+            </li>
+            <li>
+              <strong>Pay, then retry the identical request</strong> with a
+              <code>PAYMENT-SIGNATURE</code> header: base64 of the JSON
+              <code>PaymentPayload</code>
+              (<code>{ x402Version: 2, payload, accepted, resource, extensions }</code>).
+              Echo <code>extensions</code> back — that is how the facilitator catalogs the
+              resource for Bazaar discovery.
+            </li>
+            <li>
+              <strong>Read the receipt.</strong> A successful response carries the settlement
+              receipt in the <code>PAYMENT-RESPONSE</code> header, base64 JSON:
+              <code>{success, transaction, network, payer}</code>. It is listed in
+              <code>Access-Control-Expose-Headers</code>, so browsers can read it too.
+            </li>
+          </ol>
+
+          <div class="grid grid-2">
+            <article class="card card-muted">
+              <h3>Headers, V2</h3>
+              <p>
+                Client sends <code>PAYMENT-SIGNATURE</code>. The 402 carries
+                <code>PAYMENT-REQUIRED</code>. The receipt comes back in
+                <code>PAYMENT-RESPONSE</code>. The V1 names
+                <code>X-PAYMENT</code>/<code>X-PAYMENT-RESPONSE</code> are still accepted
+                inbound and mirrored outbound for older clients.
+              </p>
+            </article>
+            <article class="card card-muted">
+              <h3>Idempotency</h3>
+              <p>
+                A verified payment is remembered for 60 seconds, keyed by endpoint plus a
+                hash of the payment header. Retrying inside that window re-serves the
+                original receipt instead of settling twice — safe to retry on a timeout.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="curl-heading">
+        <div class="wrap">
+          <div class="section-head">
+            <div>
+              <h2 id="curl-heading">curl</h2>
+              <p>Replace the host with your deployment; everything else is verbatim.</p>
+            </div>
+          </div>
+
+          <h3>1 — see what it costs</h3>
+          <pre><code>curl -s https://api.example.com/v1/catalog | jq .
+
+# or ask one endpoint directly and read its 402:
+curl -s -D - -o /dev/null \
+  -X POST https://api.example.com/v1/player \
+  -H 'Content-Type: application/json' \
+  -d '{"name": "Bijan Robinson", "week": 5}'
+# HTTP/1.1 402 Payment Required
+# payment-required: eyJ4NDAyVmVyc2lvbiI6MiwiYWNjZXB0cyI6W3sic2NoZW1lIjoi...</code></pre>
+
+          <h3>2 — pay and retry</h3>
+          <pre><code># PAYMENT_SIGNATURE = base64(JSON PaymentPayload) built by your x402 client
+curl -s -D headers.txt \
+  -X POST https://api.example.com/v1/player \
+  -H 'Content-Type: application/json' \
+  -H "PAYMENT-SIGNATURE: $PAYMENT_SIGNATURE" \
+  -d '{"name": "Bijan Robinson", "week": 5}' | jq .
+
+# settlement receipt:
+grep -i '^payment-response:' headers.txt | cut -d' ' -f2 | base64 -d | jq .
+# { "success": true, "transaction": "…", "network": "algorand:…", "payer": "…" }</code></pre>
+
+          <h3>3 — against a mock-mode server (no chain)</h3>
+          <p>
+            A deployment running <code>X402_MODE=mock</code> accepts the literal header value
+            <code>mock-paid</code>. This is how the demo and this web UI are tested end to
+            end without touching a wallet.
+          </p>
+          <pre><code>curl -s -X GET 'https://api.example.com/v1/trending?lookback_hours=24' \
+  -H 'PAYMENT-SIGNATURE: mock-paid' | jq .verdict</code></pre>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="endpoints-heading">
+        <div class="wrap">
+          <div class="section-head">
+            <div>
+              <h2 id="endpoints-heading">Paid endpoints</h2>
+              <p>Live from <code>/v1/catalog</code>. Prices are USDC, 6 decimals.</p>
+            </div>
+          </div>
+          <div id="docs-endpoints">
+            <div class="skeleton-row" style="height: 220px"></div>
+          </div>
+
+          <h3 style="margin-top: 1.6rem">Response contract</h3>
+          <p>
+            Every paid body extends the same base, so one parser handles all eight endpoints:
+            <code>verdict</code>, <code>confidence</code> (<code>high|medium|low</code>),
+            <code>reasoning</code>, <code>stats_cited[]</code>, <code>sources[]</code>, and
+            <code>meta</code> (<code>generated_at</code>, <code>data_freshness</code>,
+            <code>model</code>, <code>cache</code>, <code>attribution</code>). Endpoint-specific
+            fields sit alongside those at the root.
+          </p>
+          <p>
+            Free endpoints need no payment at all: <code>GET /v1/health</code>,
+            <code>GET /v1/catalog</code>, <code>GET /v1/trending/preview</code>.
+          </p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="discovery-heading">
+        <div class="wrap">
+          <div class="section-head">
+            <div><h2 id="discovery-heading">Discovery &amp; specs</h2></div>
+          </div>
+
+          <div class="grid grid-3">
+            <article class="card">
+              <h3>OpenAPI</h3>
+              <p>
+                Interactive docs at <a href="/docs" data-api-href="/docs">/docs</a>,
+                raw schema at
+                <a href="/openapi.json" data-api-href="/openapi.json">/openapi.json</a>.
+                Every request and response model is documented there, field by field.
+              </p>
+            </article>
+            <article class="card">
+              <h3>llms.txt</h3>
+              <p>
+                A compact, agent-first description of the service at
+                <a href="/llms.txt" data-api-href="/llms.txt">/llms.txt</a> — what each
+                endpoint answers, what it costs, and how to pay for it.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Catalog</h3>
+              <p>
+                <a href="/v1/catalog" data-api-href="/v1/catalog">/v1/catalog</a> is the
+                machine-readable price list:
+                paths, methods, prices, schema names, cache TTLs, network,
+                <code>payTo</code> and facilitator URL.
+              </p>
+            </article>
+          </div>
+
+          <h3 style="margin-top: 1.8rem">Bazaar discovery</h3>
+          <p>
+            Every 402 carries an <code>extensions.bazaar</code> block: a working request
+            example, the input JSON Schema, and an example response body. Echo
+            <code>extensions</code> back in your <code>PaymentPayload</code> and the
+            facilitator catalogs the resource when your payment settles — that is how this
+            service becomes discoverable to other agents. There is no
+            <code>/.well-known</code> step; discovery is in-band.
+          </p>
+
+          <h3>Algorand x402 Challenge</h3>
+          <p>
+            Payments settle in USDC on Algorand through the GoPlausible facilitator, and each
+            payment requirement carries the challenge tag in
+            <code>accepts[].extra.tag</code> for leaderboard attribution. Current deployment
+            values:
+          </p>
+          <dl class="meta-footer" id="docs-facts" style="border: 0; margin-top: 0.6rem"></dl>
+        </div>
+      </section>
+    </main>
+
+    <div data-chrome="footer"></div>
+    <script type="module" src="js/page-docs.js"></script>
+  </body>
+</html>
