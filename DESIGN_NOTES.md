@@ -1490,3 +1490,21 @@ are closed in `ingest/backtest.py` and `api/data/predictions.py`.
   would close it, but it reverses the documented "settle fails after a good
   answer costs us an LLM call" posture, so it is a product decision. Watch
   `failed_paid_calls/` for repeat payers.
+
+## Alert filters must match the payload the service actually logs, 2026-09-29
+
+The "board failed the value gate" alert never fired. Its filter was
+`textPayload:"board quality flagged"`, but the ingest job logs structured JSON,
+so the line lives in `jsonPayload.message`; the flags since 2026-09-20 alone
+number over fifty (including a sleepers board served for 12h with nine
+ungrounded numbers on 2026-09-27), and not one reached the email channel. The
+api is different: the narrator writes plain text to stderr, so its alert's
+`textPayload` filter is correct and did fire (2026-09-22). The ingest-failure
+alert matches `jsonPayload.message="task failed"` and has fired nine times.
+
+Rule: before trusting a log-matched alert, run its exact filter through
+`gcloud logging read` **with an explicit time range** (the command's default
+freshness is one day, which makes a working filter look dead) and confirm it
+returns the lines it exists to catch. The Monitoring log records alert firings
+as `ViolationOpenEventv1` entries, which is the only evidence one ever worked.
+
