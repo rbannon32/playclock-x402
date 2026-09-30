@@ -256,9 +256,11 @@ resolved into real citations; `QUALITY_JUDGE` scores each board.
       Robinson and Ja'Marr Chase carry usage again; `/v1/health` stayed on
       2026 week 1 and only the three stat markers moved, which is the whole
       point of the flag. A forced warm followed.
-- [ ] **Create the two log-based alerts** in `infra/deploy.md` §6: `board
-      quality flagged` and `narrator .* falling back`.
-- [ ] **Run the first backtest** the Tuesday after Week 1 stats land
+- [x] **The two log-based alerts** from `infra/deploy.md` §6 exist (created
+      2026-09-03, `infra/terraform/hardening`). The board alert matched
+      `textPayload` while ingest logs structured JSON, so it never fired on
+      50+ flags; fixed 2026-09-29 to `jsonPayload.message` (DESIGN_NOTES).
+- [x] **Run the first backtest** the Tuesday after Week 1 stats land
       (`ingest --task backtest`, it is in `--task all` too) and check
       `/v1/stats` publishes an `accuracy` block. That number goes in the §5(b)
       submission.

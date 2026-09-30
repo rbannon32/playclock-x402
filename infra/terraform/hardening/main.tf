@@ -124,7 +124,7 @@ resource "google_monitoring_alert_policy" "board_quality_flagged" {
       filter = <<-EOT
         resource.type="cloud_run_job"
         resource.labels.job_name="${var.ingest_job_name}"
-        textPayload:"board quality flagged"
+        jsonPayload.message:"board quality flagged"
       EOT
     }
   }
