@@ -77,7 +77,7 @@ Usage::
 
     # against the real thing, paying real USDC
     export ALGORAND_MNEMONIC="word word ... word"
-    python fantasy_agent.py --base-url https://api.example.com --ask trending
+    python fantasy_agent.py --base-url https://api.playclock.xyz --ask trending
 
 Standalone install (this script needs nothing from the Play Clock repo)::
 

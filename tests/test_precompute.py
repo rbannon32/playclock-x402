@@ -62,9 +62,7 @@ async def ingested(store: Store) -> Store:
     behaviour test below needs this. Tests about that refusal use bare ``store``.
     """
     every = sorted({name for names in paid.REQUIRED_DATASETS.values() for name in names})
-    await store.set(
-        META_COLLECTION, FRESHNESS_DOC_ID, {name: "2026-09-29T04:00:03Z" for name in every}
-    )
+    await store.set(META_COLLECTION, FRESHNESS_DOC_ID, {name: _in_seconds(-60) for name in every})
     return store
 
 
@@ -288,7 +286,7 @@ async def test_a_partial_ingest_warms_only_what_it_can_answer(
     await store.set(
         META_COLLECTION,
         FRESHNESS_DOC_ID,
-        {"players": "2026-09-29T04:00:03Z", "trending": "2026-09-30T13:30:00Z"},
+        {"players": _in_seconds(-60), "trending": _in_seconds(-60)},
     )
 
     with pytest.raises(PrecomputeError) as excinfo:
