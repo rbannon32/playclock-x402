@@ -161,18 +161,18 @@ wallets and both payer wallets need it, on their respective networks.
 
 ## 1c. Current deployment
 
-Standing environment as of 2026-09-27. MainNet since 2026-09-01
+Standing environment as of 2026-09-29. MainNet since 2026-09-01
 (DESIGN_NOTES §20); the Bazaar entry is `https://api.playclock.xyz`.
 
 | | |
 |---|---|
 | Project | `playclock` (number `998796693706`), billing linked |
 | Region | `us-east4` |
-| API service | https://api.playclock.xyz (Cloud Run URL https://api-998796693706.us-east4.run.app), revision `api-00028` |
+| API service | https://api.playclock.xyz (Cloud Run URL https://api-998796693706.us-east4.run.app), revision `api-00029` |
 | Ingest job | `ingest`, one job, task per invocation |
 | Firestore | Native mode, `us-east4` |
-| Image tag | api `68e9a14`; ingest `68e9a14`; web `68e9a14` |
-| Web service | https://playclock.xyz, revision `web-00019` — see §3b |
+| Image tag | api `1a14874`; ingest `1a14874`; web `1a14874` |
+| Web service | https://playclock.xyz, revision `web-00020` — see §3b |
 
 The api runs `ENGINE=narrated` with `NARRATOR_TIMEOUT_SECONDS=45` and
 `RESEARCH_ENDPOINTS=none`, `--min-instances=1`. The budget was chosen from a
@@ -190,6 +190,9 @@ Since `api-00025` (2026-09-21) the api also runs `FREE_RATE_LIMIT_PER_MINUTE=0`
 to boot a positive limit under `ENV=prod` without `TRUSTED_PROXY_HOPS` (§3) —
 and `X402_MERCHANT_LOGO=https://api.playclock.xyz/apple-touch-icon.png`, the
 one host that actually serves the icon (the web service ships none).
+
+Since `1a14874` every image is built from this repository,
+`github.com/rbannon32/playclock-x402`; tags are its commit SHAs.
 
 The `payment_idempotency` TTL policy on `expires_at_ts` (§1) was enabled on
 2026-09-27, with the `68e9a14` roll-out.
