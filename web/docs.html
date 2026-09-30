@@ -100,16 +100,16 @@
           <div class="section-head">
             <div>
               <h2 id="curl-heading">curl</h2>
-              <p>Replace the host with your deployment; everything else is verbatim.</p>
+              <p>These run against the live MainNet API as written. The third needs a local server in mock mode.</p>
             </div>
           </div>
 
           <h3>1 — see what it costs</h3>
-          <pre><code>curl -s https://api.example.com/v1/catalog | jq .
+          <pre><code>curl -s https://api.playclock.xyz/v1/catalog | jq .
 
 # or ask one endpoint directly and read its 402:
 curl -s -D - -o /dev/null \
-  -X POST https://api.example.com/v1/player \
+  -X POST https://api.playclock.xyz/v1/player \
   -H 'Content-Type: application/json' \
   -d '{"name": "Bijan Robinson", "week": 5}'
 # HTTP/1.1 402 Payment Required
@@ -118,7 +118,7 @@ curl -s -D - -o /dev/null \
           <h3>2 — pay and retry</h3>
           <pre><code># PAYMENT_SIGNATURE = base64(JSON PaymentPayload) built by your x402 client
 curl -s -D headers.txt \
-  -X POST https://api.example.com/v1/player \
+  -X POST https://api.playclock.xyz/v1/player \
   -H 'Content-Type: application/json' \
   -H "PAYMENT-SIGNATURE: $PAYMENT_SIGNATURE" \
   -d '{"name": "Bijan Robinson", "week": 5}' | jq .
@@ -133,7 +133,9 @@ grep -i '^payment-response:' headers.txt | cut -d' ' -f2 | base64 -d | jq .
             <code>mock-paid</code>. This is how the demo and this web UI are tested end to
             end without touching a wallet.
           </p>
-          <pre><code>curl -s -X GET 'https://api.example.com/v1/trending?lookback_hours=24' \
+          <pre><code>X402_MODE=mock uv run uvicorn api.main:app --port 8080   # in the repo, one shell
+
+curl -s -X GET 'http://localhost:8080/v1/trending?lookback_hours=24' \
   -H 'PAYMENT-SIGNATURE: mock-paid' | jq .verdict</code></pre>
         </div>
       </section>

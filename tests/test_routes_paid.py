@@ -1029,15 +1029,12 @@ async def test_partial_ingest_only_serves_the_endpoints_it_can_answer(paid_app: 
     ``meta/freshness`` is non-empty, but ``/v1/sleepers`` has no usage rollups to
     build picks from — settling $0.25 for an empty board is the bug this guards.
     """
+    # Stamped now: a fixed date goes stale once the real clock passes it.
+    fresh = datetime.now(UTC).isoformat()
     await paid_app.set(
         META_COLLECTION,
         FRESHNESS_DOC_ID,
-        {
-            "players": "2026-09-29T04:00:03Z",
-            "player_index": "2026-09-29T04:00:03Z",
-            "id_map": "2026-09-29T04:00:03Z",
-            "trending": "2026-09-30T13:30:00Z",
-        },
+        {"players": fresh, "player_index": fresh, "id_map": fresh, "trending": fresh},
     )
     async with api_client() as client:
         trending = await client.get("/v1/trending", headers=paid("trending"))
