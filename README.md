@@ -16,7 +16,7 @@ for the binding judgement calls made during the build.
 | Web UI | <https://playclock.xyz> — connect Pera or Defly, buy one answer |
 | API | <https://api.playclock.xyz> — [`/v1/catalog`](https://api.playclock.xyz/v1/catalog), [`/openapi.json`](https://api.playclock.xyz/openapi.json), [`/llms.txt`](https://api.playclock.xyz/llms.txt) |
 | Scorecard | [`/v1/stats`](https://api.playclock.xyz/v1/stats) — every paid verdict scored against the week's actual points, free |
-| Demo video | *coming* |
+| Demo video | <https://www.youtube.com/watch?v=_GVaQr-9rLw> — four and a half minutes: the 402, a wallet payment, an AI agent paying on its own, the on-chain receipt |
 
 ## What is for sale
 
