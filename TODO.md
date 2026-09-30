@@ -8,7 +8,7 @@ Two hard dates, from the [Official Rules](https://algorand.co/hubfs/x402%20compe
 | Gate | Window | State |
 |---|---|---|
 | **§5(a) Program Registration** | closed 11:45pm ET Tue Sept 1, 2026 | **DONE — registered 2026-08-31** |
-| §5(b) Final Presentation Registration | Sept 2 – Sept 29, 2026 | **IN PROGRESS** — form received by email Sept 15; repo, demo video and Electric Capital step outstanding |
+| §5(b) Final Presentation Registration | Sept 2 – Sept 29, 2026 | **DONE — submitted 2026-09-29** |
 | §5(c) Shortlist | Sept 30 – Oct 8; notified Oct 9 | top 50 on leaderboard required |
 | §5(d) Final Presentation | Nov 2, 2026 | — |
 | §5(e) Winners announced | by Nov 12, 2026 | — |
@@ -579,20 +579,20 @@ these two endpoints are a real-usage and §5(b)-evidence play — proof of
 non-self payers — more than a leaderboard play. That is a good reason to ship
 them, not a reason to expect October volume from them.
 
-## 4. The §5(b) submission (closes Sept 29)
+## 4. The §5(b) submission — **DONE 2026-09-29**
 
 The form arrived by email on Sept 15 ("Submit your project here"). It needs a
 public GitHub URL and a 3–5 minute demo video; the same email asks for a
 separate submission of the repo to Electric Capital.
 
 - [x] Repo scanned for secrets across full history (2026-09-21, again 2026-09-27).
-- [ ] Repo public; README's demo-video row filled in.
-- [ ] Demo video: 402 by curl → Bazaar listing → pay in the web UI with Pera →
+- [x] Repo public (`rbannon32/playclock-x402`); README's demo-video row filled in.
+- [x] Demo video (<https://www.youtube.com/watch?v=_GVaQr-9rLw>): 402 by curl → Bazaar listing → pay in the web UI with Pera →
       receipt txid on the explorer → an agent paying on its own → `/v1/stats`.
       One or two payments, not a loop (Official Rules §14).
-- [ ] Form submitted. Entry type **Composite** (ten endpoints, one `payTo`).
+- [x] Form submitted 2026-09-29. Entry type **Composite** (ten endpoints, one `payTo`).
       Description: §0 above.
-- [ ] Electric Capital repo submission.
+- [x] Electric Capital repo submission: electric-capital/open-dev-data#3065.
 
 Payment evidence, stated as the indexer shows it: every settle before
 2026-09-27 came from project-owned wallets; the first outside payer was an
