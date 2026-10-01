@@ -332,15 +332,27 @@ TRENDING_DROP: tuple[tuple[str, int], ...] = (
     ("1002", 1503),
 )
 
-#: ``meta/freshness`` markers.
-# Keep the hermetic fixture fresh without tying the suite to the calendar day
-# on which it happens to run. One process-stable timestamp also keeps response
-# provenance deterministic within a test/eval run.
-_FIXTURE_FRESH_AT = datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-FRESHNESS: dict[str, str] = {
-    name: _FIXTURE_FRESH_AT
-    for name in ("players", "weekly_stats", "usage_trends", "def_vs_pos", "trending", "schedules")
-}
+#: ``meta/freshness`` markers from the most recent fixture seed.
+#: Retained for callers that inspect the golden fixture after seeding.
+FRESHNESS: dict[str, str] = {}
+
+
+def _freshness_markers(seeded_at: datetime | None = None) -> dict[str, str]:
+    """Return process-independent freshness markers for one fixture seed."""
+    marker = (seeded_at or datetime.now(UTC)).astimezone(UTC)
+    marker_text = marker.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    return {
+        name: marker_text
+        for name in (
+            "players",
+            "weekly_stats",
+            "usage_trends",
+            "def_vs_pos",
+            "trending",
+            "schedules",
+        )
+    }
+
 
 #: First game per week, for :mod:`api.core.week`.
 SCHEDULE_WEEKS: dict[str, str] = {
@@ -418,17 +430,21 @@ def _points_allowed(rank: int) -> float:
     return round(26.0 - (rank - 1) * 0.45, 2)
 
 
-async def seed_store(store: Store | None = None) -> Store:
+async def seed_store(store: Store | None = None, *, seeded_at: datetime | None = None) -> Store:
     """Populate a store with the fixture season and return it.
 
     Args:
         store: Store to write into; a fresh :class:`~api.core.store.MemoryStore`
             when omitted.
+        seeded_at: Clock override for tests; current UTC time when omitted.
 
     Returns:
         The seeded store. Idempotent — seeding twice overwrites, never appends.
     """
     store = store if store is not None else MemoryStore()
+    freshness = _freshness_markers(seeded_at)
+    FRESHNESS.clear()
+    FRESHNESS.update(freshness)
 
     index: dict[str, list[dict[str, Any]]] = {}
     for pid, (name, position, team, years, injury) in PLAYERS.items():
@@ -519,7 +535,7 @@ async def seed_store(store: Store | None = None) -> Store:
             {
                 "kind": kind,
                 "lookback_hours": 24,
-                "fetched_at": FRESHNESS["trending"],
+                "fetched_at": freshness["trending"],
                 "entries": [
                     {
                         "player_id": pid,
@@ -546,7 +562,7 @@ async def seed_store(store: Store | None = None) -> Store:
             ],
         },
     )
-    await store.set(META_COLLECTION, "freshness", dict(FRESHNESS))
+    await store.set(META_COLLECTION, "freshness", freshness)
     await store.set(
         META_COLLECTION, "schedule_weeks", {"season": SEASON, "weeks": dict(SCHEDULE_WEEKS)}
     )
