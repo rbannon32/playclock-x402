@@ -36,6 +36,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 from api.agents.engine import RESPONSE_MODELS
@@ -332,13 +333,13 @@ TRENDING_DROP: tuple[tuple[str, int], ...] = (
 )
 
 #: ``meta/freshness`` markers.
+# Keep the hermetic fixture fresh without tying the suite to the calendar day
+# on which it happens to run. One process-stable timestamp also keeps response
+# provenance deterministic within a test/eval run.
+_FIXTURE_FRESH_AT = datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 FRESHNESS: dict[str, str] = {
-    "players": "2026-09-29T04:00:03Z",
-    "weekly_stats": "2026-09-30T09:02:11Z",
-    "usage_trends": "2026-09-30T09:04:52Z",
-    "def_vs_pos": "2026-09-30T09:05:10Z",
-    "trending": "2026-09-30T13:30:00Z",
-    "schedules": "2026-09-01T04:00:00Z",
+    name: _FIXTURE_FRESH_AT
+    for name in ("players", "weekly_stats", "usage_trends", "def_vs_pos", "trending", "schedules")
 }
 
 #: First game per week, for :mod:`api.core.week`.

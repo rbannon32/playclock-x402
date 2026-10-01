@@ -22,7 +22,7 @@ from api.agents.deterministic import (
 from api.agents.engine import RESPONSE_MODELS
 from api.core.config import ENDPOINT_KEYS, Settings
 from api.core.store import MemoryStore, Store
-from api.data.stats_store import weekly_stats_collection
+from api.data.stats_store import stale_datasets, weekly_stats_collection
 from api.evals.golden import (
     DRAFT_PICKS,
     FIXTURE_FREE_AGENTS,
@@ -117,6 +117,11 @@ async def test_provenance_envelope_is_populated(
     assert response.meta.data_freshness == FRESHNESS
     assert response.meta.model is None, "the deterministic engine must not claim a model"
     assert response.meta.attribution.startswith("Data: nflverse")
+
+
+def test_golden_fixture_freshness_does_not_expire_with_wall_clock_time() -> None:
+    """The hermetic eval fixture must remain runnable after its authored date."""
+    assert stale_datasets(FRESHNESS) == []
 
 
 @pytest.mark.parametrize("key", ENDPOINT_KEYS)
