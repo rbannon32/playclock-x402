@@ -36,6 +36,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 from api.agents.engine import RESPONSE_MODELS
@@ -331,15 +332,27 @@ TRENDING_DROP: tuple[tuple[str, int], ...] = (
     ("1002", 1503),
 )
 
-#: ``meta/freshness`` markers.
-FRESHNESS: dict[str, str] = {
-    "players": "2026-09-29T04:00:03Z",
-    "weekly_stats": "2026-09-30T09:02:11Z",
-    "usage_trends": "2026-09-30T09:04:52Z",
-    "def_vs_pos": "2026-09-30T09:05:10Z",
-    "trending": "2026-09-30T13:30:00Z",
-    "schedules": "2026-09-01T04:00:00Z",
-}
+#: ``meta/freshness`` markers from the most recent fixture seed.
+#: Retained for callers that inspect the golden fixture after seeding.
+FRESHNESS: dict[str, str] = {}
+
+
+def _freshness_markers(seeded_at: datetime | None = None) -> dict[str, str]:
+    """Return process-independent freshness markers for one fixture seed."""
+    marker = (seeded_at or datetime.now(UTC)).astimezone(UTC)
+    marker_text = marker.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    return {
+        name: marker_text
+        for name in (
+            "players",
+            "weekly_stats",
+            "usage_trends",
+            "def_vs_pos",
+            "trending",
+            "schedules",
+        )
+    }
+
 
 #: First game per week, for :mod:`api.core.week`.
 SCHEDULE_WEEKS: dict[str, str] = {
@@ -417,17 +430,21 @@ def _points_allowed(rank: int) -> float:
     return round(26.0 - (rank - 1) * 0.45, 2)
 
 
-async def seed_store(store: Store | None = None) -> Store:
+async def seed_store(store: Store | None = None, *, seeded_at: datetime | None = None) -> Store:
     """Populate a store with the fixture season and return it.
 
     Args:
         store: Store to write into; a fresh :class:`~api.core.store.MemoryStore`
             when omitted.
+        seeded_at: Clock override for tests; current UTC time when omitted.
 
     Returns:
         The seeded store. Idempotent — seeding twice overwrites, never appends.
     """
     store = store if store is not None else MemoryStore()
+    freshness = _freshness_markers(seeded_at)
+    FRESHNESS.clear()
+    FRESHNESS.update(freshness)
 
     index: dict[str, list[dict[str, Any]]] = {}
     for pid, (name, position, team, years, injury) in PLAYERS.items():
@@ -518,7 +535,7 @@ async def seed_store(store: Store | None = None) -> Store:
             {
                 "kind": kind,
                 "lookback_hours": 24,
-                "fetched_at": FRESHNESS["trending"],
+                "fetched_at": freshness["trending"],
                 "entries": [
                     {
                         "player_id": pid,
@@ -545,7 +562,7 @@ async def seed_store(store: Store | None = None) -> Store:
             ],
         },
     )
-    await store.set(META_COLLECTION, "freshness", dict(FRESHNESS))
+    await store.set(META_COLLECTION, "freshness", freshness)
     await store.set(
         META_COLLECTION, "schedule_weeks", {"season": SEASON, "weeks": dict(SCHEDULE_WEEKS)}
     )

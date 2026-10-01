@@ -8,6 +8,7 @@ answer a *product* rather than a well-formed blank.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -22,7 +23,7 @@ from api.agents.deterministic import (
 from api.agents.engine import RESPONSE_MODELS
 from api.core.config import ENDPOINT_KEYS, Settings
 from api.core.store import MemoryStore, Store
-from api.data.stats_store import weekly_stats_collection
+from api.data.stats_store import stale_datasets, weekly_stats_collection
 from api.evals.golden import (
     DRAFT_PICKS,
     FIXTURE_FREE_AGENTS,
@@ -117,6 +118,16 @@ async def test_provenance_envelope_is_populated(
     assert response.meta.data_freshness == FRESHNESS
     assert response.meta.model is None, "the deterministic engine must not claim a model"
     assert response.meta.attribution.startswith("Data: nflverse")
+
+
+async def test_golden_fixture_refreshes_when_reseeded() -> None:
+    """A long-lived evaluator gets new freshness markers on every seed."""
+    first_seed = datetime(2030, 1, 1, tzinfo=UTC)
+    store = await seed_store(MemoryStore(), seeded_at=first_seed)
+    later = first_seed + timedelta(hours=3)
+    await seed_store(store, seeded_at=later)
+
+    assert stale_datasets(FRESHNESS, now=later) == []
 
 
 @pytest.mark.parametrize("key", ENDPOINT_KEYS)
