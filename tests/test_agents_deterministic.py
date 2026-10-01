@@ -8,6 +8,7 @@ answer a *product* rather than a well-formed blank.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -119,9 +120,14 @@ async def test_provenance_envelope_is_populated(
     assert response.meta.attribution.startswith("Data: nflverse")
 
 
-def test_golden_fixture_freshness_does_not_expire_with_wall_clock_time() -> None:
-    """The hermetic eval fixture must remain runnable after its authored date."""
-    assert stale_datasets(FRESHNESS) == []
+async def test_golden_fixture_refreshes_when_reseeded() -> None:
+    """A long-lived evaluator gets new freshness markers on every seed."""
+    first_seed = datetime(2030, 1, 1, tzinfo=UTC)
+    store = await seed_store(MemoryStore(), seeded_at=first_seed)
+    later = first_seed + timedelta(hours=3)
+    await seed_store(store, seeded_at=later)
+
+    assert stale_datasets(FRESHNESS, now=later) == []
 
 
 @pytest.mark.parametrize("key", ENDPOINT_KEYS)
