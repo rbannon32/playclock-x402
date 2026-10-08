@@ -627,8 +627,9 @@ quoting `/v1/stats`' unique-payer count, which counts the project's own wallets.
 - `DESIGN_NOTES.md` "Timeline flag" still hedges the Sept 1 deadline as
   unverified. It is now confirmed against the Official Rules PDF §5(a), and the
   §5(a)/§5(b) ambiguity is resolved — promote to fact and drop the note.
-- CI (`.github/workflows/ci.yml`): `actions/checkout@v4` and
-  `astral-sh/setup-uv@v5` target deprecated Node 20 and are force-run on Node 24.
+- [x] CI actions moved off deprecated Node 20 runtimes on 2026-10-08:
+      `actions/checkout@v7`, `astral-sh/setup-uv@v9.0.0`, and
+      `actions/setup-node@v7` all use Node 24.
 - Wire `gcloud run deploy` into CI (post-launch; `infra/deploy.md` preamble).
 - The bundled example agent discards `PAYMENT-SIGNATURE` on failure, so a
   paid-but-timed-out call is unrecoverable from the client side. Persist it.
