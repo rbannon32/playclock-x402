@@ -36,6 +36,8 @@ jobs:
           version: "0.8.17"
           enable-cache: true
           cache-dependency-glob: uv.lock
+          # v9 no longer prunes by default; retain v5's smaller cache uploads.
+          prune-cache: true
 
       - name: Install Python
         # .python-version pins 3.12; polars/nflreadpy/ADK wheel coverage is the
