@@ -27,15 +27,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v9.0.0
         with:
           # Pinned to match the version in the Dockerfiles.
           version: "0.8.17"
           enable-cache: true
           cache-dependency-glob: uv.lock
+          # v9 no longer prunes by default; retain v5's smaller cache uploads.
+          prune-cache: true
 
       - name: Install Python
         # .python-version pins 3.12; polars/nflreadpy/ADK wheel coverage is the
@@ -73,7 +75,7 @@ jobs:
       - name: Install Node
         # Only the wallet layer needs it. Everything else under web/ is plain
         # ES modules served as-is.
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
