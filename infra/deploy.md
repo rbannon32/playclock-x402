@@ -161,18 +161,18 @@ wallets and both payer wallets need it, on their respective networks.
 
 ## 1c. Current deployment
 
-Standing environment as of 2026-09-29. MainNet since 2026-09-01
+Standing environment as of 2026-10-09. MainNet since 2026-09-01
 (DESIGN_NOTES §20); the Bazaar entry is `https://api.playclock.xyz`.
 
 | | |
 |---|---|
 | Project | `playclock` (number `998796693706`), billing linked |
 | Region | `us-east4` |
-| API service | https://api.playclock.xyz (Cloud Run URL https://api-998796693706.us-east4.run.app), revision `api-00029` |
+| API service | https://api.playclock.xyz (Cloud Run URL https://api-998796693706.us-east4.run.app), revision `api-00031` |
 | Ingest job | `ingest`, one job, task per invocation |
 | Firestore | Native mode, `us-east4` |
-| Image tag | api `1a14874`; ingest `1a14874`; web `1a14874` |
-| Web service | https://playclock.xyz, revision `web-00020` — see §3b |
+| Image tag | api `62a94bc`; ingest `62a94bc`; web `62a94bc` |
+| Web service | https://playclock.xyz, revision `web-00022` — see §3b |
 
 The api runs `ENGINE=narrated` with `NARRATOR_TIMEOUT_SECONDS=45` and
 `RESEARCH_ENDPOINTS=none`, `--min-instances=1`. The budget was chosen from a
@@ -196,6 +196,14 @@ Since `1a14874` every image is built from this repository,
 
 The `payment_idempotency` TTL policy on `expires_at_ts` (§1) was enabled on
 2026-09-27, with the `68e9a14` roll-out.
+
+Since 2026-10-09 (`f016bd2`, then `62a94bc`) a code-only roll-out changes the
+image and nothing else: `gcloud run services update api|web --image=…` and
+`gcloud run jobs update ingest --image=…`. That keeps every env var, the
+scaling flags and the service account; the §3 and §4 commands are for a fresh
+environment, and their `--set-env-vars` would drop the wallet settings. The
+same day the board-quality alert moved to serious flags only, notified at most
+daily (`infra/terraform/hardening`, applied; DESIGN_NOTES).
 
 ## 2. Build the images
 
