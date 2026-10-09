@@ -2,10 +2,10 @@
 
 Four HTML pages, one stylesheet, ES modules served as written — **plus one bundled
 wallet layer**. Everything except `js/wallet/` needs no build, no npm install and no
-framework; open the files and what you read is what the browser runs.
-bundler, no CDN.** Every byte the browser loads is in this directory, so the site is
-auditable in a single reading, deployable by copying a folder, and works offline apart
-from the API calls themselves.
+framework; open the files and what you read is what the browser runs. There is no CDN.
+Every byte the browser loads is in this directory, so the site is auditable in a single
+reading, deployable by copying a folder, and works offline apart from the API calls
+themselves.
 
 ```
 web/
@@ -137,22 +137,28 @@ class PaymentProvider {
 
 - `MockPaymentProvider` returns a base64 mock payload with a fresh nonce per call (a distinct
   payment each time, like a real wallet). Active when mock mode is on.
-- `WalletPaymentProvider` is **stubbed**: it is constructed from `accepts[0]` of the 402
-  (so it already knows network, asset, amount, payTo), and `pay()` throws
-  `NotImplementedError` with the user-facing message *"Wallet payments land with TestNet
-  validation."* The wallet button is visible in the UI, disabled, labelled honestly.
+- `WalletPaymentProvider` signs real Algorand USDC transfers through Pera or Defly. It
+  validates the quoted network, asset, recipient and amount before signing, checks opt-in
+  and balance when algod is reachable, builds the exact AVM transaction group, and returns
+  the V2 `PAYMENT-SIGNATURE` envelope. The wallet bundle is loaded only when this path is
+  used.
 
-The full implementation plan for real wallet payments — use-wallet / Pera / Defly via
-WalletConnect, building the AVM `exact` atomic group, encoding the V2 `PaymentPayload`, and
-the "check for an npm `@x402/*` client before hand-rolling msgpack" instruction — is a
-comment block at the bottom of `js/payment.js`. Read that before starting the work.
-
-Nothing outside `payment.js` changes when the wallet lands: `api.js` already handles the
-402, the retry, and the receipt.
+`api.js` owns the surrounding 402 → sign → retry → receipt flow. It journals the signed
+request before sending it and retains an uncertain payment for replay, so a timeout or
+dropped response does not silently turn into a second charge.
 
 ## Deployment
 
-Any static host. The site has no server-side requirements and no runtime dependencies.
+Any static host. The site has no server-side requirements and no runtime dependencies, but
+the wallet layer must be built before copying or uploading `web/`:
+
+```bash
+cd web
+npm ci
+npm run build
+```
+
+That creates the gitignored `dist/wallet.js` loaded on demand by real wallet payments.
 
 **Firebase Hosting** (rewrite `/v1/**`, `/docs`, `/openapi.json`, `/llms.txt` to the API
 service so the site can stay same-origin):
@@ -172,12 +178,13 @@ service so the site can stay same-origin):
 }
 ```
 
-**Cloud Run + nginx** — a two-line Dockerfile (`FROM nginx:alpine`, `COPY web/
-/usr/share/nginx/html/`) is enough; proxy `/v1/` to the API service to keep same-origin.
+**Cloud Run + nginx** — use the repository's `Dockerfile.web`, which builds and tests the
+wallet bundle before copying the static site into nginx. Proxy `/v1/` to the API service to
+keep same-origin.
 
 **Mounted by the API service** — if `api/main.py` mounts this directory as static files at
-`/`, everything works unchanged with no configuration, because the default API base is
-same-origin. The site does not depend on being mounted that way.
+`/` after the build step above, everything works unchanged with no configuration, because
+the default API base is same-origin. The site does not depend on being mounted that way.
 
 Content-Security-Policy friendly: no external scripts, styles, fonts or images. The only
 inline anything is a data-URI SVG favicon. A policy as tight as
@@ -203,4 +210,3 @@ same-origin (widen `connect-src` for a split-origin deployment).
 
 - **Manual roster paste** for non-Sleeper managers — the API accepts a `roster[]` array on
   `POST /v1/roster`, but the UI only offers the username path.
-- **Wallet payments** — see the seam section above.

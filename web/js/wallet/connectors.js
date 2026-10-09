@@ -1,9 +1,9 @@
 /**
  * Pera and Defly, behind one small interface.
  *
- * Both ship WalletConnect v2 under the hood and both expose almost the same
- * surface (`connect`, `reconnectSession`, `disconnect`, `signTransaction`), so
- * the wrapper is thin. What it is really for is normalising two things the
+ * Both expose almost the same surface (`connect`, `reconnectSession`,
+ * `disconnect`, `signTransaction`), so the wrapper is thin. What it is really
+ * for is normalising two things the
  * SDKs disagree about, each of which is a silent wrong-money bug if guessed:
  *
  *  - **which network** — they take a numeric `chainId`, not the CAIP-2 id the

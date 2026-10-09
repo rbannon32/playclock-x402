@@ -141,13 +141,6 @@ export class MockPaymentProvider extends PaymentProvider {
 }
 
 /**
- * Real wallet provider — STUBBED for v1.
- *
- * Constructed from one `accepts[]` entry so that the surface it must satisfy is
- * fixed and inspectable in the UI (network, asset, amount, payTo) even before
- * signing works.
- */
-/**
  * Where the wallet bundle lives, relative to this module.
  *
  * Loaded with a dynamic `import()` rather than a static one so that the pages
