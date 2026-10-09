@@ -446,10 +446,29 @@ def test_a_real_name_containing_a_city_word_still_passes() -> None:
         "Faces CIN, ranked 2 against RB.",
         "Start DK Metcalf over the KC defense.",
         "Red Zone Touches decide it.",
+        # Production board-gate false positives, 2026-09 and 2026-10: a
+        # transaction gerund before a surname, and an injury described in caps.
+        "Dropping Goedert is a mistake.",
+        "Cutting Metcalf now sells low.",
+        "Back from Neck Surgery; Ankle Sprain cleared; Knee ACL Surgery last year.",
     ],
 )
 def test_real_body_names_and_ordinary_prose_pass(text: str) -> None:
     assert unknown_names(text, AWKWARD_BODY) == []
+
+
+@pytest.mark.parametrize(
+    ("text", "flagged"),
+    [
+        ("Dropping Josh Goedert is a mistake.", ["Josh Goedert"]),
+        ("Cutting Bijan Mahomes now.", ["Bijan Mahomes"]),
+        ("Back from Ankle Sprain, Travis Fakename starts.", ["Travis Fakename"]),
+    ],
+)
+def test_a_gerund_or_injury_word_does_not_hide_an_invented_name(
+    text: str, flagged: list[str]
+) -> None:
+    assert unknown_names(text, AWKWARD_BODY) == flagged
 
 
 @pytest.mark.parametrize("case", GOLDEN_CASES, ids=lambda case: case.name)

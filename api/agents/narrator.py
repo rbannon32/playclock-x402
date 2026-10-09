@@ -383,6 +383,11 @@ _NOT_A_NAME: frozenset[str] = frozenset(
     Would Should Must May Might Then Now Here There However Meanwhile Instead Otherwise
     Although Though Despite Since Because Without Across Through Between Among Unlike Via Given
     Lean Pivot Consider Avoid Prefer Trust Temper Take Grab Move Swap Upgrade Downgrade Favor
+    Dropping Cutting Adding Benching Stashing Fading Holding Trading Releasing Keeping Rostering
+    Sitting Grabbing Claiming Buying Selling Streaming Waiving Riding Scoop Snag Plug
+    Surgery Sprain Strain Tear Torn Fracture Concussion Illness Ankle Knee Neck Hamstring
+    Shoulder Groin Hip Foot Calf Quad Wrist Hand Elbow Achilles Toe Rib Ribs Chest Oblique
+    Pectoral Thumb Finger Turf ACL MCL PCL
     Today Tonight Tomorrow Yesterday Tuesday Wednesday Friday Saturday Weekend Coach Coaches
     January February March April June July August September October November December
     Sources Source Tape Film Stadium Dome Week-to-week
