@@ -94,8 +94,8 @@ real price the moment it ships.
 Today that is one tool per endpoint —
 `playclock_trending`, `playclock_sleepers`, `playclock_player`,
 `playclock_matchup`, `playclock_roster`, `playclock_waivers`, `playclock_report`,
-`playclock_team_report` — plus the free `playclock_health` and
-`playclock_trending_preview`, and two local tools:
+`playclock_team_report`, `playclock_draft_board`, `playclock_draft_report` — plus the
+free `playclock_health` and `playclock_trending_preview`, and two local tools:
 
 - **`playclock_wallet`** — paying address, ceiling, spend this session, and any
   payment still awaiting an answer. Reads local state; costs nothing.
