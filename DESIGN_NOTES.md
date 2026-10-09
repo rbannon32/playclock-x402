@@ -1508,3 +1508,23 @@ freshness is one day, which makes a working filter look dead) and confirm it
 returns the lines it exists to catch. The Monitoring log records alert firings
 as `ViolationOpenEventv1` entries, which is the only evidence one ever worked.
 
+
+## The board alert pages on serious flags only, once a day, 2026-10-09
+
+Once its filter matched (above), the board alert fired 132 times in ten days:
+the gate flagged 68 of 131 warmed boards in a week, and an hourly rate limit
+turned that into an email an hour. Most single-check flags were a true number
+missing from `stats_cited` (sleepers quoting Aaron Jones's real 0.1315 target
+share) or the name guard reading "Dropping Waller" and "Ankle Sprain" as
+people; the judge scored the same boards 3.75–5.0. The policy now matches
+three or more failed checks, a crowd-only board, or a judge flag, and notifies
+at most daily. Every flag still lands in `quality/{key}` and the logs.
+
+Replaying 249 historical flags: 165 were serious under the new rule, on 31
+days. The alert stays loud because the boards still fail; the lever is the
+ADK prose (uncited numbers, context-only player names), not the filter.
+Transaction gerunds are now `_NOT_A_NAME` words in the narrator's guard, which
+also stops it rejecting honest live rewrites. Injury terms are not: several are
+surnames ("Da'Shawn Hand"), and a separator word cuts a name down to a lone
+first name the guard never checks. `_INJURY_WORDS` clears a run only when every
+word in it is one ("Ankle Sprain"), the way an all-team run is a team.

@@ -119,12 +119,17 @@ resource "google_monitoring_alert_policy" "board_quality_flagged" {
   severity     = "WARNING"
 
   conditions {
-    display_name = "precompute logged 'board quality flagged'"
+    display_name = "precompute logged a serious 'board quality flagged'"
     condition_matched_log {
+      # Serious only: three or more failed checks, a board built on add counts
+      # alone (DESIGN_NOTES §24), or a judge flag. A single uncited-but-true
+      # number flagged about half of all warmed boards and paged hourly; those
+      # still land in quality/{key} and the logs.
       filter = <<-EOT
         resource.type="cloud_run_job"
         resource.labels.job_name="${var.ingest_job_name}"
         jsonPayload.message:"board quality flagged"
+        jsonPayload.message=~"failed ([3-9]|[0-9]{2,}) value check|non-crowd number|scored [0-9.]+/5"
       EOT
     }
   }
@@ -134,7 +139,7 @@ resource "google_monitoring_alert_policy" "board_quality_flagged" {
   alert_strategy {
     auto_close = "86400s"
     notification_rate_limit {
-      period = "3600s"
+      period = "86400s"
     }
   }
 
