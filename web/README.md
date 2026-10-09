@@ -149,7 +149,16 @@ dropped response does not silently turn into a second charge.
 
 ## Deployment
 
-Any static host. The site has no server-side requirements and no runtime dependencies.
+Any static host. The site has no server-side requirements and no runtime dependencies, but
+the wallet layer must be built before copying or uploading `web/`:
+
+```bash
+cd web
+npm ci
+npm run build
+```
+
+That creates the gitignored `dist/wallet.js` loaded on demand by real wallet payments.
 
 **Firebase Hosting** (rewrite `/v1/**`, `/docs`, `/openapi.json`, `/llms.txt` to the API
 service so the site can stay same-origin):
@@ -169,12 +178,13 @@ service so the site can stay same-origin):
 }
 ```
 
-**Cloud Run + nginx** — a two-line Dockerfile (`FROM nginx:alpine`, `COPY web/
-/usr/share/nginx/html/`) is enough; proxy `/v1/` to the API service to keep same-origin.
+**Cloud Run + nginx** — use the repository's `Dockerfile.web`, which builds and tests the
+wallet bundle before copying the static site into nginx. Proxy `/v1/` to the API service to
+keep same-origin.
 
 **Mounted by the API service** — if `api/main.py` mounts this directory as static files at
-`/`, everything works unchanged with no configuration, because the default API base is
-same-origin. The site does not depend on being mounted that way.
+`/` after the build step above, everything works unchanged with no configuration, because
+the default API base is same-origin. The site does not depend on being mounted that way.
 
 Content-Security-Policy friendly: no external scripts, styles, fonts or images. The only
 inline anything is a data-URI SVG favicon. A policy as tight as
