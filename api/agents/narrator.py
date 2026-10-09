@@ -385,9 +385,6 @@ _NOT_A_NAME: frozenset[str] = frozenset(
     Lean Pivot Consider Avoid Prefer Trust Temper Take Grab Move Swap Upgrade Downgrade Favor
     Dropping Cutting Adding Benching Stashing Fading Holding Trading Releasing Keeping Rostering
     Sitting Grabbing Claiming Buying Selling Streaming Waiving Riding Scoop Snag Plug
-    Surgery Sprain Strain Tear Torn Fracture Concussion Illness Ankle Knee Neck Hamstring
-    Shoulder Groin Hip Foot Calf Quad Wrist Hand Elbow Achilles Toe Rib Ribs Chest Oblique
-    Pectoral Thumb Finger Turf ACL MCL PCL
     Today Tonight Tomorrow Yesterday Tuesday Wednesday Friday Saturday Weekend Coach Coaches
     January February March April June July August September October November December
     Sources Source Tape Film Stadium Dome Week-to-week
@@ -395,6 +392,18 @@ _NOT_A_NAME: frozenset[str] = frozenset(
     YAC EPA ROS DFS ESPN ET PT PM AM OK US USD USDC API AI MVP OC DC HC
     ARI ATL BAL BUF CAR CHI CIN CLE DAL DEN DET GB HOU IND JAX JAC KC LV LAC LAR LA MIA MIN NE
     NO NYG NYJ PHI PIT SF SEA TB TEN WAS WSH
+    """.split()
+)
+
+#: Injury vocabulary. A run made only of these ("Ankle Sprain", "Knee ACL
+#: Surgery") is a diagnosis, not a person. Unlike :data:`_NOT_A_NAME` they never
+#: split a run, because several are surnames: "Da'Shawn Hand" must still be
+#: checked as a name, not cut down to a lone "Da'Shawn".
+_INJURY_WORDS: frozenset[str] = frozenset(
+    """
+    Surgery Sprain Strain Tear Torn Fracture Fractured Concussion Illness Ankle Knee Neck
+    Hamstring Shoulder Groin Hip Foot Calf Quad Wrist Hand Elbow Achilles Toe Rib Ribs Chest
+    Oblique Pectoral Thumb Finger Turf High ACL MCL PCL
     """.split()
 )
 
@@ -599,6 +608,8 @@ def unknown_names(text: str, body: dict[str, Any]) -> list[str]:
     for words, at_start in _capitalised_runs(text):
         if len(words) < 2:
             continue
+        if all(word in _INJURY_WORDS for word in words):
+            continue  # a whole-run diagnosis only; never the rest of a run
         if _run_is_known(words, names, lone_ok=True):
             continue
         if at_start and _run_is_known(words[1:], names, lone_ok=False):

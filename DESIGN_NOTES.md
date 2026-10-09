@@ -1523,5 +1523,8 @@ at most daily. Every flag still lands in `quality/{key}` and the logs.
 Replaying 249 historical flags: 165 were serious under the new rule, on 31
 days. The alert stays loud because the boards still fail; the lever is the
 ADK prose (uncited numbers, context-only player names), not the filter.
-Transaction gerunds and injury terms are now `_NOT_A_NAME` words in the
-narrator's guard, which also stops it rejecting honest live rewrites.
+Transaction gerunds are now `_NOT_A_NAME` words in the narrator's guard, which
+also stops it rejecting honest live rewrites. Injury terms are not: several are
+surnames ("Da'Shawn Hand"), and a separator word cuts a name down to a lone
+first name the guard never checks. `_INJURY_WORDS` clears a run only when every
+word in it is one ("Ankle Sprain"), the way an all-team run is a team.

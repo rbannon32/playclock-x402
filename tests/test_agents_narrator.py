@@ -463,6 +463,9 @@ def test_real_body_names_and_ordinary_prose_pass(text: str) -> None:
         ("Dropping Josh Goedert is a mistake.", ["Josh Goedert"]),
         ("Cutting Bijan Mahomes now.", ["Bijan Mahomes"]),
         ("Back from Ankle Sprain, Travis Fakename starts.", ["Travis Fakename"]),
+        # Injury words are surnames too; they must not cut a name down to one word.
+        ("Da'Shawn Hand is the add.", ["Da'Shawn Hand"]),
+        ("Ankle Sprain sidelines Travis Foot.", ["Travis Foot"]),
     ],
 )
 def test_a_gerund_or_injury_word_does_not_hide_an_invented_name(
