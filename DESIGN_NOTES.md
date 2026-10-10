@@ -89,7 +89,8 @@ gracefully. Also found live: the 2025+ depth-chart table changed shape (snapshot
 ### 11. Idempotency keys include the endpoint — and the request
 Payment-replay cache key is `endpoint_key + SHA256(payment header)` — otherwise a
 $0.10 trending payment could be replayed against the $0.75 team report within the
-60s idempotency window. Cross-endpoint replay is rejected and tested.
+300s idempotency window (raised from 60s; see §27). Cross-endpoint replay is
+rejected and tested.
 
 The remembered payment also carries a fingerprint of the request it bought
 (method + path + sorted query + SHA256 body). *Same* request inside the window =

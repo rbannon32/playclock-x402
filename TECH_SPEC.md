@@ -88,7 +88,9 @@ Flow per paid request:
 Implementation notes for Claude Code:
 - Use the official Algorand x402 SDK/middleware if available for Python/FastAPI (check the Algorand x402 developer guide at algorand.co/agentic-commerce/x402/developers and GoPlausible docs at build time — this ecosystem moves fast; do NOT hand-roll settlement if a maintained middleware exists). Hand-rolling only the thin FastAPI adapter around facilitator verify/settle calls is acceptable.
 - Build against **TestNet** first (test USDC), behind `X402_NETWORK` env var; flip to MainNet for launch. Both configs in `infra/`.
-- Idempotency: cache verify results per payment payload hash for 60s so client retries don't double-settle.
+- Idempotency: remember each signed payment transaction for 300s, bound to the
+  request fingerprint (method, path, sorted query, and body hash), so an identical
+  retry cannot double-settle and the payment cannot buy a different request.
 - Free endpoints bypass middleware entirely (route-level allowlist, not path-prefix magic).
 
 ## 4. Data layer

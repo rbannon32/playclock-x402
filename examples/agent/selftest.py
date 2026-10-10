@@ -20,7 +20,7 @@ Five things get checked:
    ``/v1/matchup``.
 2. **Fresh payment per request** — the same ask twice, and two *different* asks,
    all succeed. A constant payment token would be refused on the second one
-   (the server binds a payment to one request for 60s).
+   (the server binds a payment to one request for 300s).
 3. **Price guard** — a 0.10 USDC quote against a 0.05 ceiling raises
    ``PriceTooHigh`` and signs nothing.
 4. **Cold store** — an unseeded app answers 503 and the agent reports

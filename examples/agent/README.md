@@ -94,10 +94,11 @@ Two properties worth relying on when you write your own client:
 
 * **A failed analysis is never charged.** Verification happens before the handler
   and settlement only after a 2xx, so a `503`/`502`/`500` costs nothing.
-* **One payment buys one request.** A verified payment is remembered for 60
-  seconds keyed by the request it paid for; replaying it against a *different*
-  question is rejected with a fresh 402. Mint a new payment per call — the mock
-  signer's `nonce` and the real signer's per-transaction note both do this.
+* **One payment buys one request.** A verified payment is remembered for 300
+  seconds and bound to the method, path, sorted query and body it paid for;
+  replaying it against a *different* question is rejected with a fresh 402.
+  Mint a new payment per call — the mock signer's `nonce` and the real signer's
+  per-transaction note both do this.
 
 ## Quickstart: local mock server, no chain, no wallet
 
