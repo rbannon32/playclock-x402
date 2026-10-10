@@ -187,9 +187,10 @@ keep same-origin.
 the default API base is same-origin. The site does not depend on being mounted that way.
 
 Content-Security-Policy friendly: no external scripts, styles, fonts or images. The only
-inline anything is a data-URI SVG favicon. A policy as tight as
-`default-src 'self'; img-src 'self' data:; connect-src 'self'` works as-is when the API is
-same-origin (widen `connect-src` for a split-origin deployment).
+inline anything is a data-URI SVG favicon. The deployed nginx policy limits framing only.
+If a host adds a full CSP, `connect-src` must allow the API, the selected wallet SDK's relay,
+and the public AlgoNode endpoint used for account checks and transaction parameters; a
+same-origin-only policy blocks real wallet payments.
 
 ## Accessibility and behaviour notes
 

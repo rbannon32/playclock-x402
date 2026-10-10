@@ -86,9 +86,10 @@
             <article class="card card-muted">
               <h3>Idempotency</h3>
               <p>
-                A verified payment is remembered for 60 seconds, keyed by endpoint plus a
-                hash of the payment header. Retrying inside that window re-serves the
-                original receipt instead of settling twice — safe to retry on a timeout.
+                A verified payment is remembered for 300 seconds and bound to the method,
+                path, sorted query and request body it paid for. Retrying the identical
+                request inside that window re-serves the original receipt instead of
+                settling twice; using it for a different request is rejected.
               </p>
             </article>
           </div>
