@@ -8,13 +8,15 @@ dangerous moment is not a rejected payment — it is a *successful* one whose
 response never arrives. The money has moved; the answer is recoverable only by
 replaying the identical request with the identical ``PAYMENT-SIGNATURE``.
 
-Replay is safe and free: the server binds a payment to
-``endpoint_key + SHA256(header)`` plus a fingerprint of the request (method,
-path, sorted query, body hash). The *same* request inside the idempotency window
-returns the cached receipt without settling again; a *different* request with
-the same header is refused with a 402. That is exactly the behaviour a recovery
-journal needs, and it is why every field of the original request is stored here
-rather than just the header.
+Replay is safe and free: the server keys a real payment on a digest of the
+Algorand transaction id, independent of its header encoding or endpoint, and
+binds that record to a fingerprint of the request (method, path, sorted query,
+body hash).
+The *same* request inside the idempotency window returns the cached receipt
+without settling again; a *different* request with the same payment is refused
+with a 402. That is exactly the behaviour a recovery journal needs, and it is
+why every field of the original request is stored here rather than just the
+header.
 
 The journal is therefore written **before** the paid request is sent and cleared
 only once a response is in hand. A crash, a timeout or a killed MCP client all

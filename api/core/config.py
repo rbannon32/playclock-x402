@@ -20,7 +20,7 @@ reaching for the global).
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -45,6 +45,11 @@ StoreBackend = Literal["memory", "firestore"]
 Engine = Literal["deterministic", "narrated", "adk"]
 X402Mode = Literal["disabled", "mock", "live"]
 X402Network = Literal["testnet", "mainnet"]
+
+# USDC has six decimal places on Algorand. Reject values that cannot buy even
+# one atomic unit, along with NaN/infinity, at startup rather than emitting an
+# invalid (or accidentally free) payment requirement on the first paid call.
+UsdcPrice = Annotated[float, Field(ge=0.000001, allow_inf_nan=False)]
 
 
 class Settings(BaseSettings):
@@ -97,6 +102,7 @@ class Settings(BaseSettings):
     )
     narrator_timeout_seconds: float = Field(
         default=20.0,
+        gt=0,
         description=(
             "How long ENGINE=narrated waits for the prose rewrite before serving the "
             "deterministic body unchanged. Settlement precedes the response, so this "
@@ -146,6 +152,7 @@ class Settings(BaseSettings):
     )
     x402_asset_id: int = Field(
         default=0,
+        ge=0,
         description="USDC ASA id for the active network. 0 means the built-in id for X402_NETWORK.",
     )
     x402_challenge_tag: str = Field(
@@ -202,6 +209,7 @@ class Settings(BaseSettings):
 
     free_rate_limit_per_minute: int = Field(
         default=120,
+        ge=0,
         description=(
             "Per-client cap on the free routes, per minute, per instance. "
             "Payment is the limit on the paid routes; this stops an advert or a "
@@ -249,16 +257,18 @@ class Settings(BaseSettings):
     season: int = Field(default=2026, description="Active NFL season year.")
 
     # --- prices (USDC, env-tunable for October experiments) --------------
-    price_trending: float = Field(default=0.10, description="Price of GET /v1/trending.")
-    price_sleepers: float = Field(default=0.20, description="Price of GET /v1/sleepers.")
-    price_player: float = Field(default=0.10, description="Price of POST /v1/player.")
-    price_matchup: float = Field(default=0.20, description="Price of POST /v1/matchup.")
-    price_roster: float = Field(default=0.35, description="Price of POST /v1/roster.")
-    price_waivers: float = Field(default=0.20, description="Price of GET /v1/waivers.")
-    price_report: float = Field(default=0.35, description="Price of GET /v1/report.")
-    price_team_report: float = Field(default=0.50, description="Price of POST /v1/team-report.")
-    price_draft_board: float = Field(default=0.20, description="Price of GET /v1/draft-board.")
-    price_draft_report: float = Field(default=0.50, description="Price of POST /v1/draft-report.")
+    price_trending: UsdcPrice = Field(default=0.10, description="Price of GET /v1/trending.")
+    price_sleepers: UsdcPrice = Field(default=0.20, description="Price of GET /v1/sleepers.")
+    price_player: UsdcPrice = Field(default=0.10, description="Price of POST /v1/player.")
+    price_matchup: UsdcPrice = Field(default=0.20, description="Price of POST /v1/matchup.")
+    price_roster: UsdcPrice = Field(default=0.35, description="Price of POST /v1/roster.")
+    price_waivers: UsdcPrice = Field(default=0.20, description="Price of GET /v1/waivers.")
+    price_report: UsdcPrice = Field(default=0.35, description="Price of GET /v1/report.")
+    price_team_report: UsdcPrice = Field(default=0.50, description="Price of POST /v1/team-report.")
+    price_draft_board: UsdcPrice = Field(default=0.20, description="Price of GET /v1/draft-board.")
+    price_draft_report: UsdcPrice = Field(
+        default=0.50, description="Price of POST /v1/draft-report."
+    )
 
     @model_validator(mode="after")
     def _require_verified_proxy_for_production_rate_limit(self) -> Settings:

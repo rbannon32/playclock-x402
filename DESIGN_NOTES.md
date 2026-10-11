@@ -86,11 +86,15 @@ sells "red-zone touches" in `/v1/sleepers`. Ingest derives it from `load_pbp`
 gracefully. Also found live: the 2025+ depth-chart table changed shape (snapshot
 `dt` rows, no season/week columns) — ingest keeps only the latest snapshot.
 
-### 11. Idempotency keys include the endpoint — and the request
-Payment-replay cache key is `endpoint_key + SHA256(payment header)` — otherwise a
-$0.10 trending payment could be replayed against the $0.75 team report within the
-300s idempotency window (raised from 60s; see §27). Cross-endpoint replay is
-rejected and tested.
+### 11. Idempotency keys identify the transaction — and bind the request
+Payment-replay cache keys for real payments use a digest of the Algorand transaction id,
+independent of header encoding and endpoint. Otherwise the same signed transfer
+could be re-encoded or presented to another same-priced route, verify again,
+and run a second handler before the duplicate settlement failed. The remembered
+record's request fingerprint rejects every cross-endpoint reuse before a handler
+runs. The header-and-endpoint key remains only for mock payloads, which carry no
+transaction. The 300s idempotency window (raised from 60s; see §27) starts at
+verification.
 
 The remembered payment also carries a fingerprint of the request it bought
 (method + path + sorted query + SHA256 body). *Same* request inside the window =

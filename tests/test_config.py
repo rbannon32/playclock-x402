@@ -52,6 +52,30 @@ def test_price_for_rejects_unknown_endpoint() -> None:
         _settings().price_for("nope")
 
 
+@pytest.mark.parametrize("price", [float("-inf"), -0.01, 0, 0.0000001, float("inf"), float("nan")])
+def test_price_rejects_values_that_cannot_be_valid_usdc_quotes(price: float) -> None:
+    with pytest.raises(ValueError):
+        _settings(price_trending=price)
+
+
+def test_price_accepts_one_usdc_atomic_unit() -> None:
+    assert _settings(price_trending=0.000001).price_trending == 0.000001
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("x402_asset_id", -1),
+        ("free_rate_limit_per_minute", -1),
+        ("narrator_timeout_seconds", 0),
+        ("narrator_timeout_seconds", -1),
+    ],
+)
+def test_runtime_limits_reject_invalid_values(field: str, value: int) -> None:
+    with pytest.raises(ValueError):
+        _settings(**{field: value})
+
+
 def test_env_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ENV", "prod")
     monkeypatch.setenv("STORE_BACKEND", "firestore")

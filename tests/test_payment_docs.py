@@ -28,3 +28,10 @@ def test_active_payment_docs_name_the_replay_window(path: str, expected: str) ->
 
 def test_mcp_replay_window_matches_the_server_contract() -> None:
     assert REPLAY_WINDOW_SECONDS == IDEMPOTENCY_TTL_SECONDS
+
+
+@pytest.mark.parametrize("path", ["DESIGN_NOTES.md", "playclock_mcp/journal.py"])
+def test_active_idempotency_docs_name_the_transaction_identity(path: str) -> None:
+    text = (ROOT / path).read_text()
+    assert "transaction id" in text
+    assert "endpoint_key + SHA256(header)" not in text
