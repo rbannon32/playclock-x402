@@ -93,8 +93,9 @@ could be re-encoded or presented to another same-priced route, verify again,
 and run a second handler before the duplicate settlement failed. The remembered
 record's request fingerprint rejects every cross-endpoint reuse before a handler
 runs. The header-and-endpoint key remains only for mock payloads, which carry no
-transaction. The 300s idempotency window (raised from 60s; see §27) starts at
-verification.
+transaction. The 300s idempotency window (raised from 60s; see §27) starts when
+the settlement outcome is persisted; a separate claim lease protects the
+payment while the handler runs.
 
 The remembered payment also carries a fingerprint of the request it bought
 (method + path + sorted query + SHA256 body). *Same* request inside the window =
@@ -1322,10 +1323,11 @@ left cold for that reason, or for exhausted retries, raises and **exits the job
 non-zero**: a warmer that silently warmed nothing is indistinguishable from a
 healthy run while every paid call falls back to the slow path.
 
-**Idempotency TTL raised 60s -> 300s.** The clock starts at *verify*, before the
-handler runs, so at 60s with a 72s handler the record expired before the response
-existed: a client that timed out and retried got a cache miss and was charged
-twice — the exact double-charge the cache exists to prevent.
+**Idempotency TTL raised 60s -> 300s.** The current design uses a separate claim
+lease while the handler runs, then writes the 300s replay TTL with the settlement
+outcome. This replaced the original design where the replay clock started at
+verify and a 60s record could expire during a 72s handler, allowing a timed-out
+client's retry to be charged twice.
 
 Still open: the three personalized endpoints (`matchup`, `roster`, `team_report`)
 cannot be precomputed and still run ~55s against a <20s p95 promise. Either speed

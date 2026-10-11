@@ -35,3 +35,12 @@ def test_active_idempotency_docs_name_the_transaction_identity(path: str) -> Non
     text = (ROOT / path).read_text()
     assert "transaction id" in text
     assert "endpoint_key + SHA256(header)" not in text
+
+
+@pytest.mark.parametrize(
+    "path", ["CLAUDE.md", "DESIGN_NOTES.md", "api/x402/middleware.py", "web/js/api.js"]
+)
+def test_active_idempotency_docs_name_the_current_timing(path: str) -> None:
+    text = (ROOT / path).read_text()
+    assert "settlement" in text
+    assert "clock starts at *verify*" not in text
