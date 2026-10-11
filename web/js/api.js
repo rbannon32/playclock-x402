@@ -320,7 +320,7 @@ export function getTrendingPreview() {
  */
 export const PENDING_PAYMENTS_KEY = "playclock.pendingPayments";
 
-/** Server window is 300s from verify; stop offering a replay a little before. */
+/** Start at signing: conservative because the server's 300s window begins later, at settlement. */
 export const PENDING_REPLAY_WINDOW_MS = 290_000;
 
 /** Expired entries are kept this long only so the UI can say they expired. */

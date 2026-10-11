@@ -223,9 +223,9 @@ Endpoint keys and default prices (USDC), in catalog order:
   Each settled payment serves at most `MAX_REPLAYS` (5) replays, counted by
   compare-and-swap on its record; past that it 402s `payment_replay_limit_reached`,
   or one payment buys unlimited generations.
-- The idempotency TTL is **300s**, and the clock starts at *verify*, before the
-  handler runs. It must stay above the slowest handler or a client that times
-  out and retries gets charged twice.
+- A verification claim protects the payment while the handler runs. Once its
+  settlement outcome is persisted, the **300s idempotency TTL** begins; replays
+  inside it skip verify and settle.
 - Clients must **persist `PAYMENT-SIGNATURE` until they hold the response**.
   Replay is the only way to recover a paid-but-timed-out call.
 - The x402 SDK (`x402-avm`, import name `x402`) is confined to `api/x402/`.

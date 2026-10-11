@@ -133,14 +133,10 @@ __all__ = [
 
 logger = logging.getLogger(__name__)
 
-#: How long a verified payment is remembered so retries do not double-settle.
-#:
-#: The clock starts at *verify*, before the handler runs, so this must exceed the
-#: slowest handler or the record expires before the response it is meant to
-#: protect even exists. That is not hypothetical: at 60s, with the ADK pipeline
-#: running ~72s, a client that timed out and retried got a cache miss and was
-#: charged a second time — the exact double-charge this cache exists to prevent.
-#: Keep it at or above the Cloud Run request timeout (infra/deploy.md §3).
+#: How long a settlement outcome is remembered so retries do not double-settle.
+#: The clock starts when the outcome replaces the verification claim, after the
+#: handler and settlement finish. While the handler runs, ``_CLAIM_LEASE_SECONDS``
+#: prevents another request from using the same payment concurrently.
 IDEMPOTENCY_TTL_SECONDS = 300.0
 
 #: How many times one settled payment may be replayed. Each replay re-runs the
