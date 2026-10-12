@@ -110,11 +110,13 @@ class PlayClockMCP:
                 openapi = openapi_response.json()
                 if not isinstance(catalog, dict) or not isinstance(openapi, dict):
                     raise ValueError("catalog and OpenAPI responses must be JSON objects")
-            except (httpx.HTTPError, ValueError) as exc:
+                endpoints = {e.tool.name: e for e in build_tools(catalog, openapi)}
+                network = str(catalog.get("network") or "")
+            except (httpx.HTTPError, AttributeError, TypeError, ValueError) as exc:
                 logger.warning("discovery failed against %s: %s", self._base_url, exc)
                 return {}
-            self._endpoints = {e.tool.name: e for e in build_tools(catalog, openapi)}
-            self._network = str(catalog.get("network") or "")
+            self._endpoints = endpoints
+            self._network = network
             logger.info(
                 "discovered %d endpoints at %s (network=%s)",
                 len(self._endpoints),

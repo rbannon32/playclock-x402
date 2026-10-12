@@ -449,6 +449,7 @@ async def test_the_wallet_tool_says_which_network_it_is_paying_on(
     [
         ("/v1/catalog", httpx.Response(503, json={"detail": "unavailable"})),
         ("/openapi.json", httpx.Response(200, json=[])),
+        ("/v1/catalog", httpx.Response(200, json={"endpoints": ["bad"]})),
     ],
 )
 async def test_discovery_failure_keeps_local_tools_available(
