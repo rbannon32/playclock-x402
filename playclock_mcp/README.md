@@ -84,6 +84,10 @@ both numbers named, and the model is told not to retry on its own.
 | `PLAYCLOCK_STATE_DIR` | `~/.playclock` | where the payment journal lives |
 | `PLAYCLOCK_LOG_LEVEL` | `INFO` | stderr log level |
 
+The price ceiling and timeout must be positive, finite numbers. Invalid values
+stop the server at startup instead of silently replacing a mistyped spending
+limit with the default.
+
 ## Tools
 
 Tools are **derived from the service at startup**, not hard-coded: the server
