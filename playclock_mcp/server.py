@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import os
 from typing import Any
 
@@ -101,13 +102,21 @@ class PlayClockMCP:
         """
         if self._endpoints is None:
             try:
-                catalog = (await self._http.get("/v1/catalog")).json()
-                openapi = (await self._http.get("/openapi.json")).json()
-            except (httpx.HTTPError, ValueError) as exc:
+                catalog_response = await self._http.get("/v1/catalog")
+                catalog_response.raise_for_status()
+                catalog = catalog_response.json()
+                openapi_response = await self._http.get("/openapi.json")
+                openapi_response.raise_for_status()
+                openapi = openapi_response.json()
+                if not isinstance(catalog, dict) or not isinstance(openapi, dict):
+                    raise ValueError("catalog and OpenAPI responses must be JSON objects")
+                endpoints = {e.tool.name: e for e in build_tools(catalog, openapi)}
+                network = str(catalog.get("network") or "")
+            except (httpx.HTTPError, AttributeError, TypeError, ValueError) as exc:
                 logger.warning("discovery failed against %s: %s", self._base_url, exc)
                 return {}
-            self._endpoints = {e.tool.name: e for e in build_tools(catalog, openapi)}
-            self._network = str(catalog.get("network") or "")
+            self._endpoints = endpoints
+            self._network = network
             logger.info(
                 "discovered %d endpoints at %s (network=%s)",
                 len(self._endpoints),
@@ -320,6 +329,20 @@ def build_server(app: PlayClockMCP) -> Server[None]:
     )
 
 
+def _positive_finite_env(name: str, default: float) -> float:
+    """Read a positive finite float, failing closed on a bad safety setting."""
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    try:
+        value = float(raw)
+    except ValueError as exc:
+        raise WalletError(f"{name} must be a positive finite number, got {raw!r}") from exc
+    if not math.isfinite(value) or value <= 0:
+        raise WalletError(f"{name} must be a positive finite number, got {raw!r}")
+    return value
+
+
 def build_app_from_env() -> PlayClockMCP:
     """Construct the server from environment configuration.
 
@@ -336,14 +359,8 @@ def build_app_from_env() -> PlayClockMCP:
             "against a server running X402_MODE=mock."
         ) from exc
 
-    try:
-        ceiling = float(os.environ.get("PLAYCLOCK_MAX_PRICE_USDC", DEFAULT_MAX_PRICE_USDC))
-    except ValueError:
-        ceiling = DEFAULT_MAX_PRICE_USDC
-    try:
-        timeout = float(os.environ.get("PLAYCLOCK_TIMEOUT_SECONDS", DEFAULT_TIMEOUT_SECONDS))
-    except ValueError:
-        timeout = DEFAULT_TIMEOUT_SECONDS
+    ceiling = _positive_finite_env("PLAYCLOCK_MAX_PRICE_USDC", DEFAULT_MAX_PRICE_USDC)
+    timeout = _positive_finite_env("PLAYCLOCK_TIMEOUT_SECONDS", DEFAULT_TIMEOUT_SECONDS)
     timeout = min(timeout, MAX_TIMEOUT_SECONDS)
 
     return PlayClockMCP(

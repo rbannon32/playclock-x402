@@ -26,10 +26,16 @@ import pytest
 
 from api.core.store import Store
 from api.x402 import RECEIPTS_COLLECTION
-from playclock_mcp.errors import DataNotReady, PaymentInFlight, PlayClockError, PriceTooHigh
+from playclock_mcp.errors import (
+    DataNotReady,
+    PaymentInFlight,
+    PlayClockError,
+    PriceTooHigh,
+    WalletError,
+)
 from playclock_mcp.journal import PaymentJournal
 from playclock_mcp.payments import MockSigner, Payer, purchase, recover
-from playclock_mcp.server import PlayClockMCP
+from playclock_mcp.server import PlayClockMCP, build_app_from_env
 from tests.test_routes_free import api_client, configure
 
 
@@ -436,6 +442,59 @@ async def test_the_wallet_tool_says_which_network_it_is_paying_on(
     assert status["network"] == "testnet"
     # Mock signer, so nothing real is at stake here.
     assert status["spending_real_usdc"] is False
+
+
+@pytest.mark.parametrize(
+    ("path", "response"),
+    [
+        ("/v1/catalog", httpx.Response(503, json={"detail": "unavailable"})),
+        ("/openapi.json", httpx.Response(200, json=[])),
+        ("/v1/catalog", httpx.Response(200, json={"endpoints": ["bad"]})),
+    ],
+)
+async def test_discovery_failure_keeps_local_tools_available(
+    payer: Payer, path: str, response: httpx.Response
+) -> None:
+    """Bad remote metadata must not take the recovery and wallet tools down."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == path:
+            return response
+        if request.url.path == "/v1/catalog":
+            return httpx.Response(200, json={"network": "mainnet", "endpoints": []})
+        return httpx.Response(200, json={"paths": {}})
+
+    app = PlayClockMCP(base_url="https://playclock.test", payer=payer)
+    await app._http.aclose()  # noqa: SLF001 - replace the transport for this integration test
+    app._http = httpx.AsyncClient(  # noqa: SLF001
+        transport=httpx.MockTransport(handler), base_url="https://playclock.test"
+    )
+    try:
+        tools = await app.list_tools()
+    finally:
+        await app.aclose()
+
+    assert {tool.name for tool in tools} == {"playclock_wallet", "playclock_recover_payments"}
+
+
+@pytest.mark.parametrize(
+    ("name", "value"),
+    [
+        ("PLAYCLOCK_MAX_PRICE_USDC", "typo"),
+        ("PLAYCLOCK_MAX_PRICE_USDC", "nan"),
+        ("PLAYCLOCK_MAX_PRICE_USDC", "0"),
+        ("PLAYCLOCK_TIMEOUT_SECONDS", "inf"),
+        ("PLAYCLOCK_TIMEOUT_SECONDS", "-1"),
+    ],
+)
+def test_invalid_mcp_safety_settings_fail_closed(
+    monkeypatch: pytest.MonkeyPatch, name: str, value: str
+) -> None:
+    monkeypatch.setenv("PLAYCLOCK_MOCK", "1")
+    monkeypatch.setenv(name, value)
+
+    with pytest.raises(WalletError, match=name):
+        build_app_from_env()
 
 
 # -- the signer pays USDC and nothing else ----------------------------------
