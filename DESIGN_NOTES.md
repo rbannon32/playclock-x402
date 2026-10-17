@@ -1535,3 +1535,43 @@ also stops it rejecting honest live rewrites. Injury terms are not: several are
 surnames ("Da'Shawn Hand"), and a separator word cuts a name down to a lone
 first name the guard never checks. `_INJURY_WORDS` clears a run only when every
 word in it is one ("Ankle Sprain"), the way an all-team run is a team.
+
+
+## Low-traffic operating configuration, 2026-10-17
+
+Authorized cost reduction for leaving the service online for several months:
+API minimum instances 1 → 0 (service minimum also explicitly 0); ingest
+`ENGINE=adk` → `narrated`, `QUALITY_JUDGE=false`, `RESEARCH_ENDPOINTS=none`.
+The deterministic engine computes board structure and the guarded narrator
+writes prose. Rule-based quality assessment remains enabled. Trending ingest
+now runs hourly, declared and applied through the existing Terraform root.
+The two-hour precompute loop, post-stats forced refresh, cache TTLs, stats/
+backtest chain, payment settings, model, and retry budgets are preserved.
+
+Artifact Registry was 13.8 GB with no cleanup policy. The new policy deletes
+versions older than 30 days while retaining five recent versions per image,
+`latest`, `keep-*`, and all three deployed `62a94bc` images. Future deployments
+must preserve the deployed image tag or attach a `keep-*` tag.
+
+Savings remain an estimate until compared with subsequent billing; the old
+September Vertex measurement predates the earlier TTL/retry improvements.
+
+The first narrated full-board smoke run exposed a production-size bug: sleepers
+carried citations for every scanned candidate, including those not selected,
+producing a 1,163,189-byte Firestore cache document (limit 1,048,576). The same
+pattern affected report. Both now retain player citations only for the players
+actually selected, plus unscoped citations. This also reduces narrator input.
+Regression coverage verifies selected-player evidence and traceability.
+The first smoke execution was cancelled after detecting the failure.
+
+Validated after deployment: build `a6f89be9-9754-402f-9b66-871e0d75b217`,
+API revision `api-00033-mvs`, api/ingest image tag `cost-20261017-0817a8b`
+(protected by cleanup policy; built from the working tree). Execution
+`ingest-hxtbh` completed successfully in 4m3s: five boards warmed, zero
+failed/blocked/flagged and zero rule-based quality failures. Board times:
+trending 26s, sleepers 79.8s, waivers 22.1s, report 78.3s, draft board 14.7s.
+Grounding guards rejected one trending number and one draft-board ADP claim,
+retaining computed prose for those fields. API health reported no stale or
+unavailable data, unpaid trending returned 402, and the website returned 200.
+Local validation: 1,607 tests, all 23 deterministic golden cases, lint and
+format checks passed. Terraform applied only the hourly trending change.

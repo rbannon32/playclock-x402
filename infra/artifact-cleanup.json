@@ -1,0 +1,36 @@
+[
+  {
+    "name": "delete-older-than-30-days",
+    "action": {
+      "type": "Delete"
+    },
+    "condition": {
+      "tagState": "any",
+      "olderThan": "30d"
+    }
+  },
+  {
+    "name": "keep-five-recent-per-image",
+    "action": {
+      "type": "Keep"
+    },
+    "mostRecentVersions": {
+      "keepCount": 5
+    }
+  },
+  {
+    "name": "keep-deployed-images",
+    "action": {
+      "type": "Keep"
+    },
+    "condition": {
+      "tagState": "tagged",
+      "tagPrefixes": [
+        "62a94bc",
+        "latest",
+        "keep-",
+        "cost-20261017-0817a8b"
+      ]
+    }
+  }
+]
