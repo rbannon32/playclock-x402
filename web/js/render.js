@@ -27,7 +27,8 @@ import { titleFor } from "./endpoints.js";
 const CONFIDENCE_VARIANTS = { high: "high", medium: "medium", low: "low" };
 
 function list(value) {
-  return Array.isArray(value) ? value : [];
+  // Optional rows may be absent even when the rest of a response is usable.
+  return Array.isArray(value) ? value.filter((item) => item !== null && item !== undefined) : [];
 }
 
 function text(value, fallback = "") {
