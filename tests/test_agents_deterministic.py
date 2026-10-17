@@ -1156,3 +1156,31 @@ async def test_a_token_that_cannot_be_a_doc_id_resolves_as_a_name(
     response = await engine.analyze("player", {"week": WEEK, "name": "Bijan/Robinson"})
     assert response.player.player_id == ""
     assert response.confidence == "low"
+
+
+@pytest.mark.parametrize("key", ["sleepers", "report"])
+async def test_board_cites_only_selected_players(
+    engine: DeterministicAnalysisEngine, key: str
+) -> None:
+    # A season's candidates include the whole league. Their unused evidence
+    # must not bloat cached boards or the narrator's input past storage limits.
+    response = await engine.analyze(key, {**CONTEXTS[key], "limit": 1})
+    payload = response.model_dump(mode="json")
+    citations = payload.pop("stats_cited")
+    names: set[str] = set()
+
+    def collect(value: Any) -> None:
+        if isinstance(value, dict):
+            for field, child in value.items():
+                if field in {"name", "injured_player"} and isinstance(child, str):
+                    names.add(child)
+                collect(child)
+        elif isinstance(value, list):
+            for child in value:
+                collect(child)
+
+    collect(payload)
+    assert names
+    assert citations
+    assert all(c["player"] is None or c["player"] in names for c in citations)
+    assert check_citations_traceable(response.stats_cited, CONTEXTS[key]) == []

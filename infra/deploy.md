@@ -161,25 +161,25 @@ wallets and both payer wallets need it, on their respective networks.
 
 ## 1c. Current deployment
 
-Standing environment as of 2026-10-09. MainNet since 2026-09-01
+Standing environment as of 2026-10-17. MainNet since 2026-09-01
 (DESIGN_NOTES §20); the Bazaar entry is `https://api.playclock.xyz`.
 
 | | |
 |---|---|
 | Project | `playclock` (number `998796693706`), billing linked |
 | Region | `us-east4` |
-| API service | https://api.playclock.xyz (Cloud Run URL https://api-998796693706.us-east4.run.app), revision `api-00031` |
+| API service | https://api.playclock.xyz (Cloud Run URL https://api-998796693706.us-east4.run.app), revision `api-00033-mvs` |
 | Ingest job | `ingest`, one job, task per invocation |
 | Firestore | Native mode, `us-east4` |
-| Image tag | api `62a94bc`; ingest `62a94bc`; web `62a94bc` |
+| Image tag | api/ingest `cost-20261017-0817a8b`; web `62a94bc` |
 | Web service | https://playclock.xyz, revision `web-00022` — see §3b |
 
 The api runs `ENGINE=narrated` with `NARRATOR_TIMEOUT_SECONDS=45` and
-`RESEARCH_ENDPOINTS=none`, `--min-instances=1`. The budget was chosen from a
+`RESEARCH_ENDPOINTS=none`, `--min-instances=0` since 2026-10-17. The budget was chosen from a
 measurement against real Vertex before the flip: player 10s, matchup 10s,
 roster 25s, no rejected edits; every client waits longer (web 180s, MCP 300s,
-example agent 180s, 402 window 120s). The ingest job runs `ENGINE=adk` with
-`QUALITY_JUDGE=true`. Rolling either forward is `--update-env-vars`, never
+example agent 180s, 402 window 120s). Since 2026-10-17 the ingest job runs `ENGINE=narrated` with
+`QUALITY_JUDGE=false` and `RESEARCH_ENDPOINTS=none`. Rolling either forward is `--update-env-vars`, never
 `--set-env-vars`: the latter drops the wallet and facilitator settings.
 
 The ingest job additionally carries `MODEL_RETRY_ATTEMPTS=6` (§4) since
@@ -204,6 +204,44 @@ scaling flags and the service account; the §3 and §4 commands are for a fresh
 environment, and their `--set-env-vars` would drop the wallet settings. The
 same day the board-quality alert moved to serious flags only, notified at most
 daily (`infra/terraform/hardening`, applied; DESIGN_NOTES).
+
+### Low-traffic cost configuration (2026-10-17)
+
+The API now scales to zero (both service and revision minimums are zero).
+Ingest uses narrated generation: deterministic board bodies with one guarded
+prose rewrite, rather than the full ADK pipeline. Routine model judging is off;
+the rule-based board checks remain active. Trending ingest runs hourly, with
+its schedule managed by Terraform. Stats/backtest, nightly ingest, both
+precompute schedules, cache TTLs, model and retry budgets remain unchanged.
+The ADK timing/cost discussion below records the earlier configuration.
+
+Apply the ingest settings without replacing other environment variables:
+
+```bash
+gcloud run jobs update ingest --project="$PROJECT_ID" --region="$REGION" \
+  --update-env-vars=ENGINE=narrated,QUALITY_JUDGE=false,RESEARCH_ENDPOINTS=none
+gcloud run services update api --project="$PROJECT_ID" --region="$REGION" \
+  --min-instances=0 --min=0
+```
+
+Artifact Registry cleanup is defined in `infra/artifact-cleanup.json`: delete
+versions older than 30 days, retaining five recent versions per image plus
+`latest`, `keep-*`, `cost-20261017-0817a8b` (api/ingest), and
+`62a94bc` (web and rollback) tags. Before deploying
+a different image that might age out, add its tag to the keep policy or attach
+a `keep-*` tag. Cleanup is asynchronous; storage savings are not immediate.
+
+```bash
+gcloud artifacts repositories set-cleanup-policies "$REPO" \
+  --project="$PROJECT_ID" --location="$REGION" \
+  --policy=infra/artifact-cleanup.json --no-dry-run
+```
+
+Rollback: update ingest to `ENGINE=adk,QUALITY_JUDGE=true,RESEARCH_ENDPOINTS=trending,report`
+(use a custom gcloud dictionary delimiter for the comma inside the research
+value); restore API `--min-instances=1`; restore the Terraform trending cron
+to `*/30 * * * *` and apply. Previously removed images cannot be recovered by
+removing the cleanup policy, so deployed and rollback images are retained.
 
 ## 2. Build the images
 
@@ -240,7 +278,7 @@ gcloud run deploy api \
   --allow-unauthenticated \
   --cpu=2 --memory=2Gi \
   --concurrency=8 \
-  --min-instances=1 \
+  --min-instances=0 \
   --max-instances=10 \
   --timeout=300s \
   --set-env-vars="\
@@ -277,12 +315,12 @@ Why these numbers (tech spec §1):
 - The public API uses the deterministic engine for personalized requests. A
   paid cache-miss `/v1/roster` still took 53.637s on ADK with research disabled,
   so this protects a caller from settling and then timing out. The separate
-  ingest job remains on ADK and precomputes the five default premium boards;
-  those cached responses retain the grounded Vertex synthesis.
+  ingest job precomputes the five default premium boards; since 2026-10-17
+  it also uses narrated generation to reduce background model spending.
 
-- `--min-instances=1` **during the season**. Agentic synthesis already costs
-  ~10-20s; a cold start on top of that loses the sale. Drop it to 0 in the
-  off-season — it is the single biggest line on the bill.
+- `--min-instances=0` for the low-traffic configuration adopted 2026-10-17.
+  The first request after idle may cold-start; the API remains narrated.
+  Restore a warm instance only if measured demand justifies the idle cost.
 - `--concurrency=8`: each in-flight paid call holds an ADK pipeline; more
   concurrency per instance just queues on CPU.
 - `--timeout=300s`, **not** the 60s this originally said. Measured ADK latency on
@@ -385,16 +423,19 @@ STORE_BACKEND=firestore,\
 GOOGLE_CLOUD_PROJECT=$PROJECT_ID,\
 GOOGLE_CLOUD_LOCATION=global,\
 GOOGLE_GENAI_USE_ENTERPRISE=true,\
-ENGINE=adk,\
+ENGINE=narrated,\
+RESEARCH_ENDPOINTS=none,\
 MODEL_ID=gemini-3.7-flash,\
-QUALITY_JUDGE=true,\
+QUALITY_JUDGE=false,\
 NARRATOR_TIMEOUT_SECONDS=120,\
 MODEL_RETRY_ATTEMPTS=6,\
 SEASON=2026"
 ```
 
-The last seven are for the `precompute` task, which runs the real ADK pipeline
-and, with `QUALITY_JUDGE=true`, scores each board it warms (`ingest/judge.py`).
+The model settings are for `precompute`, which now computes each board and
+narrates its prose. `QUALITY_JUDGE=false` disables the optional model judge;
+the rule-based value checks still run. The following ADK measurements explain
+the historical timeout and retry budgets, which are retained for rollback.
 `MODEL_RETRY_ATTEMPTS=6` is above the api's default of 4 because nothing is
 waiting on this job: a Vertex 429 on one of a board's ~9 calls is retried
 inside the SDK (2s, 4s, 8s, 16s, 30s) rather than failing the run and
@@ -504,10 +545,10 @@ gcloud scheduler jobs create http ingest-stats \
   --oauth-service-account-email="$SCHED_SA" \
   --message-body='{"overrides":{"containerOverrides":[{"args":["--task","stats,backtest"]}]}}'
 
-# Sleeper trending add/drop — every 30 minutes, all week. This is the market
+# Sleeper trending add/drop — hourly, all week. This is the market
 # signal every board endpoint is ranked on.
 gcloud scheduler jobs create http ingest-trending \
-  --location="$REGION" --schedule="*/30 * * * *" --time-zone="America/New_York" \
+  --location="$REGION" --schedule="0 * * * *" --time-zone="America/New_York" \
   --uri="$JOB_URI" --http-method=POST \
   --oauth-service-account-email="$SCHED_SA" \
   --message-body='{"overrides":{"containerOverrides":[{"args":["--task","trending"]}]}}'

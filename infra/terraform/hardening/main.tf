@@ -19,8 +19,8 @@ locals {
       args        = ["--task", "stats,backtest"]
     }
     "ingest-trending" = {
-      description = "Refresh Sleeper trending adds and drops every 30 minutes."
-      schedule    = "*/30 * * * *"
+      description = "Refresh Sleeper trending adds and drops hourly."
+      schedule    = "0 * * * *"
       args        = ["--task", "trending"]
     }
     "ingest-precompute" = {

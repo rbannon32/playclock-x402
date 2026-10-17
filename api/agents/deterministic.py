@@ -1027,7 +1027,9 @@ class DeterministicAnalysisEngine(AnalysisEngine):
                     f"does not support."
                 )
             ),
-            stats_cited=cites.items,
+            stats_cited=[
+                c for c in cites.items if c.player is None or c.player in {v.name for v in chosen}
+            ],
             sources=[],
             meta=meta,
             week=tools.week,
@@ -1641,6 +1643,12 @@ class DeterministicAnalysisEngine(AnalysisEngine):
 
         streamers = await self._report_streamers(tools, cites, views)
 
+        # Scanning candidates cites the whole league. Only publish evidence for
+        # the players selected into the report: otherwise production rollups
+        # exceed Firestore's 1 MiB cache limit and overwhelm the narrator.
+        named = {v.name for v in emerging + stock_up + stock_down + rookie_watch + streamers}
+        named.update(injury.injured_player for injury in injuries)
+        named.update(v.name for injury in injuries for v in injury.beneficiaries)
         meta, fresh = await self._meta(tools)
         signals = [fresh, bool(views), bool(emerging), bool(stock_up), bool(injuries)]
         return ReportResponse(
@@ -1674,7 +1682,7 @@ class DeterministicAnalysisEngine(AnalysisEngine):
                 f"{'/'.join(STREAMER_POSITIONS)} facing a defense ranked "
                 f"{GOOD_MATCHUP_RANK} or better in points allowed to them."
             ),
-            stats_cited=cites.items,
+            stats_cited=[c for c in cites.items if c.player is None or c.player in named],
             sources=[],
             meta=meta,
             week=tools.week,
