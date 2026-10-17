@@ -288,7 +288,8 @@ STORE_BACKEND=firestore,\
 GOOGLE_CLOUD_PROJECT=$PROJECT_ID,\
 GOOGLE_CLOUD_LOCATION=global,\
 GOOGLE_GENAI_USE_ENTERPRISE=true,\
-ENGINE=deterministic,\
+ENGINE=narrated,\
+NARRATOR_TIMEOUT_SECONDS=45,\
 MODEL_ID=gemini-3.7-flash,\
 ENGINE_FALLBACK=true,\
 RESEARCH_ENDPOINTS=none,\
@@ -312,11 +313,10 @@ count (one proxy that overwrites the header appends one entry, so `1`).
 
 Why these numbers (tech spec §1):
 
-- The public API uses the deterministic engine for personalized requests. A
-  paid cache-miss `/v1/roster` still took 53.637s on ADK with research disabled,
-  so this protects a caller from settling and then timing out. The separate
-  ingest job precomputes the five default premium boards; since 2026-10-17
-  it also uses narrated generation to reduce background model spending.
+- The public API uses the narrated engine for personalized requests: it
+  computes the response body, then gives the guarded prose rewrite up to 45s.
+  The separate ingest job precomputes the five default premium boards; since
+  2026-10-17 it also uses narrated generation to reduce background model spending.
 
 - `--min-instances=0` for the low-traffic configuration adopted 2026-10-17.
   The first request after idle may cold-start; the API remains narrated.
